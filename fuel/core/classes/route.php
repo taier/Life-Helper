@@ -1,125 +1,71 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
-class Route
-{
+class Route {
 
-	/**
-	 * @var  array  segments array
-	 */
 	public $segments = array();
 
-	/**
-	 * @var  array  named params array
-	 */
 	public $named_params = array();
 
-	/**
-	 * @var  array  method params array
-	 */
 	public $method_params = array();
 
-	/**
-	 * @var  string  route path
-	 */
 	public $path = '';
 
-	/**
-	 * @var  boolean  route case match behaviour
-	 */
-	public $case_sensitive = false;
-
-	/**
-	 * @var  boolean  wether to strip the extension from the URI
-	 */
-	public $strip_extension = true;
-
-	/**
-	 * @var  string  route module
-	 */
 	public $module = null;
 
-	/**
-	 * @var  string  route directory
-	 */
 	public $directory = null;
 
-	/**
-	 * @var  string  controller name
-	 */
 	public $controller = null;
 
-	/**
-	 * @var  string  default controller action
-	 */
 	public $action = 'index';
 
-	/**
-	 * @var  mixed  route translation
-	 */
 	public $translation = null;
 
-	/**
-	 * @var  closure
-	 */
-	public $callable = null;
-
-	/**
-	 * @var  mixed  the compiled route regex
-	 */
 	protected $search = null;
 
-	public function __construct($path, $translation = null, $case_sensitive = null, $strip_extension = null)
+	public function __construct($path, $translation = null)
 	{
-		$this->path = $path;
-		$this->translation = ($translation === null) ? $path : $translation;
-		$this->search = ($translation == stripslashes($path)) ? $path : $this->compile();
-		$this->case_sensitive = ($case_sensitive === null) ? \Config::get('routing.case_sensitive', true) : $case_sensitive;
-		$this->strip_extension = ($strip_extension === null) ? \Config::get('routing.strip_extension', true) : $strip_extension;
+		if ($translation === null)
+		{
+			$this->path = $path;
+			$this->translation = $path;
+		}
+		else
+		{
+			$this->path = $path;
+			$this->translation = $translation;
+			$this->compile();
+		}
 	}
 
-	/**
-	 * Compiles a route. Replaces named params and regex shortcuts.
-	 *
-	 * @return  string  compiled route.
-	 */
 	protected function compile()
 	{
 		if ($this->path === '_root_')
 		{
-			return '';
+			$this->search = '';
 		}
-
-		$search = str_replace(array(
-			':any',
-			':alnum',
-			':num',
-			':alpha',
-			':segment',
-		), array(
-			'.+',
-			'[[:alnum:]]+',
-			'[[:digit:]]+',
-			'[[:alpha:]]+',
-			'[^/]*',
-		), $this->path);
-
-		return preg_replace('#(?<!\[\[):([a-z\_]+)(?!:\]\])#uD', '(?P<$1>.+?)', $search);
+		else
+		{
+			$this->search = str_replace(array(':any', ':segment'), array('.+', '[^/]*'), $this->path);
+			$this->search = preg_replace('|:([a-z\_]+)|uD', '(?P<$1>.+?)', $this->search);
+		}
 	}
 
 	/**
-	 * Attempts to find the correct route for the given URI
+	 * Attemptes to find the correct route for the given URI
 	 *
 	 * @access	public
 	 * @param	object	The URI object
@@ -128,14 +74,13 @@ class Route
 	public function parse(\Request $request)
 	{
 		$uri = $request->uri->get();
-		$method = $request->get_method();
 
 		if ($uri === '' and $this->path === '_root_')
 		{
 			return $this->matched();
 		}
 
-		$result = $this->_parse_search($uri, null, $method);
+		$result = $this->_parse_search($uri);
 
 		if ($result)
 		{
@@ -150,10 +95,19 @@ class Route
 	 *
 	 * @access	public
 	 * @param	string	The matched route
-	 * @return	object  $this
+	 * @return	array
 	 */
 	public function matched($uri = '', $named_params = array())
 	{
+		$path = $this->translation;
+
+		if ($uri != '')
+		{
+			$path = preg_replace('@^'.$this->search.'$@uD', $this->translation, $uri);
+		}
+
+		$method_params = array();
+
 		// Clean out all the non-named stuff out of $named_params
 		foreach($named_params as $key => $val)
 		{
@@ -164,35 +118,7 @@ class Route
 		}
 
 		$this->named_params = $named_params;
-
-		if ($this->translation instanceof \Closure)
-		{
-			$this->callable = $this->translation;
-		}
-		else
-		{
-			$path = $this->translation;
-
-			if ($uri != '')
-			{
-				// strip the extension if needed and there is something to strip
-				if ($this->strip_extension and strrchr($uri, '.') == $ext = '.'.\Input::extension())
-				{
-					$uri = substr($uri, 0, -(strlen($ext)));
-				}
-
-				if ($this->case_sensitive)
-				{
-					$path = preg_replace('#^'.$this->search.'$#uD', $this->translation, $uri);
-				}
-				else
-				{
-					$path = preg_replace('#^'.$this->search.'$#uiD', $this->translation, $uri);
-				}
-			}
-
-			$this->segments = explode('/', trim($path, '/'));
-		}
+		$this->segments = explode('/', trim($path, '/'));
 
 		return $this;
 	}
@@ -200,16 +126,15 @@ class Route
 	/**
 	 * Parses an actual route - extracted out of parse() to make it recursive.
 	 *
-	 * @param   string  The URI object
-	 * @param   object  route object
-	 * @param   string  request method
-	 * @return  array|boolean
+	 * @access private
+	 * @param string The URI object
+	 * @return array OR boolean
 	 */
-	protected function _parse_search($uri, $route = null, $method = null)
+	private function _parse_search($uri, $route = null)
 	{
 		if ($route === null)
 		{
-			$route = $this;
+			$route =& $this;
 		}
 
 		if (is_array($route->translation))
@@ -218,12 +143,10 @@ class Route
 			{
 				$verb = $r[0];
 
-				$protocol = isset($r[2]) ? ($r[2] ? 'https' : 'http') : false;
-
-				if (($protocol === false or $protocol == \Input::protocol()) and $method == strtoupper($verb))
+				if (\Input::method() == strtoupper($verb))
 				{
 					$r[1]->search = $route->search;
-					$result = $route->_parse_search($uri, $r[1], $method);
+					$result = $route->_parse_search($uri, $r[1]);
 
 					if ($result)
 					{
@@ -235,16 +158,7 @@ class Route
 			return false;
 		}
 
-		if ($this->case_sensitive)
-		{
-			$result = preg_match('#^'.$route->search.'$#uD', $uri, $params);
-		}
-		else
-		{
-			$result = preg_match('#^'.$route->search.'$#uiD', $uri, $params);
-		}
-
-		if ($result === 1)
+		if (preg_match('@^'.$route->search.'$@uD', $uri, $params) != false)
 		{
 			return $route->matched($uri, $params);
 		}
@@ -254,3 +168,5 @@ class Route
 		}
 	}
 }
+
+/* End of file route.php */

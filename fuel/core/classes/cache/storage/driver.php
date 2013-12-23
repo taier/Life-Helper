@@ -1,70 +1,74 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
 
-abstract class Cache_Storage_Driver
-{
+
+abstract class Cache_Storage_Driver {
 
 	/**
-	 * @var  array  defines which class properties are gettable with get_... in the __call() method
+	 * @var array defines which class properties are gettable with get_... in the __call() method
 	 */
 	protected static $_gettable = array('created', 'expiration', 'dependencies', 'identifier');
 
 	/**
-	 * @var  array  defines which class properties are settable with set_... in the __call() method
+	 * @var array defines which class properties are settable with set_... in the __call() method
 	 */
 	protected static $_settable = array('expiration', 'dependencies', 'identifier');
 
 	/**
-	 * @var  string  name of the content handler driver
+	 * @var string name of the content handler driver
 	 */
 	protected $content_handler = null;
 
 	/**
-	 * @var  Cache_Handler_Driver  handles and formats the cache's contents
+	 * @var Cache_Handler_Driver handles and formats the cache's contents
 	 */
 	protected $handler_object = null;
 
 	/**
-	 * @var  string  the cache's name, either string or md5'd serialization of something else
+	 * @var string the cache's name, either string or md5'd serialization of something else
 	 */
 	protected $identifier = null;
 
 	/**
-	 * @var  int  timestamp of creation of the cache
+	 * @var int timestamp of creation of the cache
 	 */
 	protected $created = null;
 
 	/**
-	 * @var  int  timestamp when this cache will expire
+	 * @var int timestamp when this cache will expire
 	 */
 	protected $expiration = null;
 
 	/**
-	 * @var  array  contains identifiers of other caches this one depends on
+	 * @var array contains identifiers of other caches this one depends on
 	 */
 	protected $dependencies = array();
 
 	/**
-	 * @var  mixed  the contents of this
+	 * @var mixed the contents of this
 	 */
 	protected $contents = null;
 
 	/**
-	 * @var  string  loaded driver
+	 * @var string loaded driver
 	 */
 	protected $driver = null;
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Abstract method that should take care of the storage engine specific reading. Needs to set the object properties:
@@ -74,9 +78,12 @@ abstract class Cache_Storage_Driver
 	 * - contents
 	 * - content_handler
 	 *
-	 * @return  bool  success of the operation
+	 * @access	protected
+	 * @return	bool success of the operation
 	 */
 	abstract protected function _get();
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Abstract method that should take care of the storage engine specific writing. Needs to write the object properties:
@@ -85,54 +92,71 @@ abstract class Cache_Storage_Driver
 	 * - dependencies
 	 * - contents
 	 * - content_handler
+	 *
+	 * @access	protected
 	 */
 	abstract protected function _set();
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Should delete this cache instance, should also run reset() afterwards
+	 *
+	 * @access	public
 	 */
 	abstract public function delete();
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Flushes the whole cache for a specific storage type or just a part of it when $section is set
 	 * (might not work with all storage drivers), defaults to the default storage type
 	 *
-	 * @param  string
+	 * @access	public
+	 * @param	string
 	 */
 	abstract public function delete_all($section);
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Should check all dependencies against the creation timestamp.
 	 * This is static to make it possible in the future to check dependencies from other storages then the current one,
 	 * though I don't have a clue yet how to make that possible.
 	 *
-	 * @return  bool either true or false on any failure
+	 * @access	protected
+	 * @return	bool either true or false on any failure
 	 */
-	abstract public function check_dependencies(array $dependencies);
+	abstract public function check_dependencies(Array $dependencies);
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Default constructor, any extension should either load this first or act similar
 	 *
-	 * @param  string  the identifier for this cache
-	 * @param  array   additional config values
+	 * @param	string	the identifier for this cache
+	 * @param	array	additional config values
 	 */
 	public function __construct($identifier, $config)
 	{
 		$this->identifier = $identifier;
 
 		// fetch options from config and set them
-		$this->expiration       = array_key_exists('expiration', $config) ? $config['expiration'] : \Config::get('cache.expiration', null);
-		$this->dependencies     = array_key_exists('dependencies', $config) ? $config['dependencies'] : array();
-		$this->content_handler  = array_key_exists('content_handler', $config) ? new $config['content_handler']() : null;
-		$this->driver           = array_key_exists('driver', $config) ? $config['driver'] : 'file';
+		$this->expiration		= array_key_exists('expiration', $config) ? $config['expiration'] : \Config::get('cache.expiration', null);
+		$this->dependencies		= array_key_exists('dependencies', $config) ? $config['dependencies'] : array();
+		$this->content_handler	= array_key_exists('content_handler', $config) ? new $config['content_handler']() : null;
+		$this->driver			= array_key_exists('driver', $config) ? $config['driver'] : 'file';
 	}
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Allows for default getting and setting
 	 *
-	 * @param   string
-	 * @param   array
-	 * @return  void|mixed
+	 * @access	public
+	 * @param	string
+	 * @param	array
+	 * @return	void|mixed
 	 */
 	public function __call($method, $args = array())
 	{
@@ -146,7 +170,7 @@ abstract class Cache_Storage_Driver
 			}
 			else
 			{
-				throw new \BadMethodCallException('This property doesn\'t exist or can\'t be read.');
+				throw new \Cache_Exception('This property doesn\'t exist or can\'t be read.');
 			}
 		}
 		// Allow setting any properties set in static::$_settable
@@ -159,29 +183,31 @@ abstract class Cache_Storage_Driver
 			}
 			else
 			{
-				throw new \BadMethodCallException('This property doesn\'t exist or can\'t be set.');
+				throw new \Cache_Exception('This property doesn\'t exist or can\'t be set.');
 			}
 			return $this;
 		}
 		else
 		{
-			throw new \BadMethodCallException('Illegal method call: ' . $method);
+			throw new \Cache_Exception('Illegal method call: ' . $method);
 		}
 	}
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Converts the identifier to a string when necessary:
 	 * A int is just converted to a string, all others are serialized and then md5'd
 	 *
-	 * @param   mixed
-	 * @return  string
+	 * @access	public
+	 * @param	mixed
 	 */
 	public static function stringify_identifier($identifier)
 	{
 		// Identifier may not be empty, but can be false or 0
 		if ($identifier === '' || $identifier === null)
 		{
-			throw new \FuelException('The identifier cannot be empty, must contain a value of any kind other than null or an empty string.');
+			throw new \Cache_Exception('The identifier cannot be empty, must contain a value of any kind other than null or an empty string.');
 		}
 
 		// In case of string or int just return it as a string
@@ -190,7 +216,7 @@ abstract class Cache_Storage_Driver
 			// cleanup to only allow alphanum chars, dashes, dots & underscores
 			if (preg_match('/^([a-z0-9_\.\-]*)$/iuD', $identifier) === 0)
 			{
-				throw new \FuelException('Cache identifier can only contain alphanumeric characters, underscores, dashes & dots.');
+				throw new \Cache_Exception('Cache identifier can only contain alphanumeric characters, underscores, dashes & dots.');
 			}
 
 			return (string) $identifier;
@@ -202,8 +228,12 @@ abstract class Cache_Storage_Driver
 		}
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Resets all properties except for the identifier, should be run by default when a delete() is triggered
+	 *
+	 * @access public
 	 */
 	public function reset()
 	{
@@ -215,18 +245,20 @@ abstract class Cache_Storage_Driver
 		$this->handler_object	= null;
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
-	 * Front for writing the cache, ensures interchangeability of storage engines. Actual writing
+	 * Front for writing the cache, ensures interchangebility of storage engines. Actual writing
 	 * is being done by the _set() method which needs to be extended.
 	 *
-	 * @param   mixed                 The content to be cached
-	 * @param   int                   The time in seconds until the cache will expire, =< 0 or null means no expiration
-	 * @param   array                 array of names on which this cache depends for
-	 * @return  Cache_Storage_Driver  The new request
+	 * @access	public
+	 * @param	mixed			The content to be cached
+	 * @param	int				The time in seconds until the cache will expire, =< 0 or null means no expiration
+	 * @param	array			Array of names on which this cache depends for
+	 * @return	object			The new request
 	 */
 	final public function set($contents = null, $expiration = false, $dependencies = array())
 	{
-		$contents = \Fuel::value($contents);
 		// save the current expiration
 		$current_expiration = $this->expiration;
 
@@ -235,16 +267,14 @@ abstract class Cache_Storage_Driver
 		$this->expiration	= ($expiration !== false) ? $expiration : $this->expiration;
 		$this->dependencies	= ( ! empty($dependencies)) ? $dependencies : $this->dependencies;
 
-		$this->created = time();
-
 		// Create expiration timestamp when other then null
 		if ( ! is_null($this->expiration))
 		{
 			if ( ! is_numeric($this->expiration))
 			{
-				throw new \InvalidArgumentException('Expiration must be a valid number.');
+				throw new \Cache_Exception('Expiration must be a valid number.');
 			}
-			$this->expiration = $this->created + intval($this->expiration);
+			$this->expiration = time() + intval($this->expiration);
 		}
 
 		// Convert dependency identifiers to string when set
@@ -257,6 +287,8 @@ abstract class Cache_Storage_Driver
 			}
 		}
 
+		$this->created = time();
+
 		// Turn everything over to the storage specific method
 		$this->_set();
 
@@ -264,18 +296,21 @@ abstract class Cache_Storage_Driver
 		$this->expiration = $current_expiration;
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
-	 * Front for reading the cache, ensures interchangeability of storage engines. Actual reading
+	 * Front for reading the cache, ensures interchangebility of storage engines. Actual reading
 	 * is being done by the _get() method which needs to be extended.
 	 *
-	 * @param   bool
-	 * @return  Cache_Storage_Driver
+	 * @access	public
+	 * @param	bool
+	 * @return	mixed
 	 */
 	final public function get($use_expiration = true)
 	{
 		if ( ! $this->_get())
 		{
-			throw new \CacheNotFoundException('not found');
+			throw new \Cache_Exception('not found');
 		}
 
 		if ($use_expiration)
@@ -283,28 +318,30 @@ abstract class Cache_Storage_Driver
 			if ( ! is_null($this->expiration) and $this->expiration < 0)
 			{
 				$this->delete();
-				throw new \CacheExpiredException('expired');
+				throw new \Cache_Exception('expired');
 			}
 
 			// Check dependencies and handle as expired on failure
 			if ( ! $this->check_dependencies($this->dependencies))
 			{
 				$this->delete();
-				throw new \CacheExpiredException('expired');
+				throw new \Cache_Exception('expired');
 			}
 		}
 
 		return $this->get_contents();
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
-	 * Does get() & set() in one call that takes a callback and it's arguments to generate the contents
+	 * Does get() & set() in one call that takes a callback and it's arguements to generate the contents
 	 *
-	 * @param   string|array  Valid PHP callback
-	 * @param   array         Arguments for the above function/method
-	 * @param   int|null      Cache expiration in seconds
-	 * @param   array         Contains the identifiers of caches this one will depend on
-	 * @return  mixed
+	 * @access	public
+	 * @param	string|array	Valid PHP callback
+	 * @param	array 			Arguements for the above function/method
+	 * @param	int				Cache expiration in minutes
+	 * @param	array			Contains the identifiers of caches this one will depend on
 	 */
 	final public function call($callback, $args = array(), $expiration = null, $dependencies = array())
 	{
@@ -312,10 +349,10 @@ abstract class Cache_Storage_Driver
 		{
 			$this->get();
 		}
-		catch (\CacheNotFoundException $e)
+		catch (Cache_Exception $e)
 		{
 			// Create the contents
-			$contents = call_fuel_func_array($callback, $args);
+			$contents = call_user_func_array($callback, $args);
 
 			$this->set($contents, $expiration, $dependencies);
 		}
@@ -323,12 +360,14 @@ abstract class Cache_Storage_Driver
 		return $this->get_contents();
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Set the contents with optional handler instead of the default
 	 *
-	 * @param   mixed
-	 * @param   string
-	 * @return  Cache_Storage_Driver
+	 * @access	public
+	 * @param	mixed
+	 * @param	string
 	 */
 	public function set_contents($contents, $handler = NULL)
 	{
@@ -338,21 +377,26 @@ abstract class Cache_Storage_Driver
 		return $this;
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Fetches contents
 	 *
-	 * @return  mixed
+	 * @access	public
+	 * @return	mixed
 	 */
 	public function get_contents()
 	{
 		return $this->handle_reading($this->contents);
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Decides a content handler that makes it possible to write non-strings to a file
 	 *
-	 * @param   string
-	 * @return  Cache_Storage_Driver
+	 * @access	protected
+	 * @param	string
 	 */
 	protected function set_content_handler($handler)
 	{
@@ -361,11 +405,14 @@ abstract class Cache_Storage_Driver
 		return $this;
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Gets a specific content handler
 	 *
-	 * @param   string
-	 * @return  Cache_Handler_Driver
+	 * @access	public
+	 * @param	string
+	 * @return	Cache_Handler_Driver
 	 */
 	public function get_content_handler($handler = null)
 	{
@@ -374,7 +421,7 @@ abstract class Cache_Storage_Driver
 			return $this->handler_object;
 		}
 
-		// When not yet set, use $handler or detect the preferred handler (string = string, otherwise serialize)
+		// When not yet set, use $handler or detect the prefered handler (string = string, otherwise serialize)
 		if (empty($this->content_handler) && empty($handler))
 		{
 			if ( ! empty($handler))
@@ -392,29 +439,37 @@ abstract class Cache_Storage_Driver
 			}
 		}
 
-		$class = '\\Cache_Handler_'.ucfirst($this->content_handler);
+		$class = 'Cache_Handler_'.ucfirst($this->content_handler);
 		$this->handler_object = new $class();
 
 		return $this->handler_object;
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Converts the contents the cachable format
 	 *
-	 * @return  string
+	 * @access	protected
+	 * @return	string
 	 */
 	protected function handle_writing($contents)
 	{
 		return $this->get_content_handler()->writable($contents);
 	}
 
+	// ---------------------------------------------------------------------
+
 	/**
 	 * Converts the cachable format to the original value
 	 *
-	 * @return  mixed
+	 * @access	protected
+	 * @return	mixed
 	 */
 	protected function handle_reading($contents)
 	{
 		return $this->get_content_handler()->readable($contents);
 	}
 }
+
+/* End of file driver.php */

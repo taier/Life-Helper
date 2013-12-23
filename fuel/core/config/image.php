@@ -1,30 +1,13 @@
 <?php
 /**
- * Part of the Fuel framework.
- *
- * @package    Fuel
- * @version    1.7
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
+ * Email config for use with the email package.
  */
-
-/**
- * NOTICE:
- *
- * If you need to make modifications to the default configuration, copy
- * this file to your app/config folder, and make them in there.
- *
- * This will allow you to upgrade fuel without losing your custom config.
- */
-
 
 return array(
 	/**
-	 * The driver to be used. Currently gd, imagemagick or imagick
+	 * The driver to be used. Currently gd or imagemagick
 	 */
-	'driver' => 'gd',
+	'driver' => 'imagemagick',
 
 	/**
 	 * Sets the background color of the image.
@@ -53,12 +36,12 @@ return array(
 	/**
 	 * The install location of the imagemagick executables.
 	 */
-	'imagemagick_dir' => '/usr/bin/',
+	'imagemagick_dir' => 'C:/wamp/imagemagick/',
 
 	/**
 	 * Temporary directory to store image files in that are being edited.
 	 */
-	'temp_dir' => APPPATH.'tmp'.DS,
+	'temp_dir' => 'C:/wamp/tmp/',
 
 	/**
 	 * The string of text to append to the image.
@@ -68,18 +51,13 @@ return array(
 	/**
 	 * Sets if the queue should be cleared after a save(), save_pa(), or output().
 	 */
-	'clear_queue' => true,
-
-	/**
-	 * Determines whether to automatically reload the image (false) or keep the changes (true) when saving or outputting.
-	 */
-	'persistence' => false,
+	'clear_queue' => false,
 
 	/**
 	 * Used to debug the class, defaults to false.
 	 */
 	'debug' => false,
-
+	
 	/**
 	 * These presets allow you to call controlled manipulations.
 	 */
@@ -91,8 +69,8 @@ return array(
 		 *
 		 * Note that config values here override the current configuration.
 		 *
-		 * Driver cannot be changed in here.
-
+		 * Libraries cannot be changed in here. (TODO - Add this feature)
+		 */
 		'example' => array(
 			'quality' => 100,
 			'bgcolor' => null,
@@ -103,8 +81,7 @@ return array(
 				array('output', 'png')
 			)
 		)
-		*/
 	)
 );
 
-
+/* End of file email.php */

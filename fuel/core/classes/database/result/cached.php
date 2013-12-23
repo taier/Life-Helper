@@ -2,7 +2,7 @@
 /**
  * Cached database result.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query/Result
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
@@ -11,15 +11,9 @@
 
 namespace Fuel\Core;
 
-class Database_Result_Cached extends \Database_Result
-{
+class Database_Result_Cached extends \Database_Result {
 
-	/**
-	 * @param  array   $result
-	 * @param  string  $sql
-	 * @param  mixed   $as_object
-	 */
-	public function __construct(array $result, $sql, $as_object = null)
+	public function __construct(array $result, $sql, $as_object = NULL)
 	{
 		parent::__construct($result, $sql, $as_object);
 
@@ -32,36 +26,29 @@ class Database_Result_Cached extends \Database_Result
 		// Cached results do not use resources
 	}
 
-	/**
-	 * @return $this
-	 */
 	public function cached()
 	{
 		return $this;
 	}
 
-	/**
-	 * @param integer $offset
-	 *
-	 * @return bool
-	 */
 	public function seek($offset)
 	{
-		if ( ! $this->offsetExists($offset))
+		if ($this->offsetExists($offset))
 		{
-			return false;
-		}
+			$this->_current_row = $offset;
 
-		$this->_current_row = $offset;
-		return true;
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
 	}
 
-	/**
-	 * @return mixed
-	 */
 	public function current()
 	{
-		return $this->valid() ? $this->_result[$this->_current_row] : null;
+		// Return an array of the row
+		return $this->_result[$this->_current_row];
 	}
 
-}
+} // End Database_Result_Cached

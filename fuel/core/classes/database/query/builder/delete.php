@@ -2,7 +2,7 @@
 /**
  * Database query builder for DELETE statements.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,8 +11,7 @@
 
 namespace Fuel\Core;
 
-class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
-{
+class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
 
 	// DELETE FROM ...
 	protected $_table;
@@ -20,9 +19,10 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
 	/**
 	 * Set the table for a delete.
 	 *
-	 * @param mixed $table table name or array($table, $alias) or object
+	 * @param   mixed  table name or array($table, $alias) or object
+	 * @return  void
 	 */
-	public function __construct($table = null)
+	public function __construct($table = NULL)
 	{
 		if ($table)
 		{
@@ -37,8 +37,7 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
 	/**
 	 * Sets the table to delete from.
 	 *
-	 * @param   mixed  $table  table name or array($table, $alias) or object
-	 *
+	 * @param   mixed  table name or array($table, $alias) or object
 	 * @return  $this
 	 */
 	public function table($table)
@@ -51,18 +50,11 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
 	/**
 	 * Compile the SQL query and return it.
 	 *
-	 * @param   mixed  $db  Database_Connection instance or instance name
-	 *
+	 * @param   object  Database instance
 	 * @return  string
 	 */
-	public function compile($db = null)
+	public function compile(\Database_Connection$db)
 	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = \Database_Connection::instance($db);
-		}
-
 		// Start a deletion query
 		$query = 'DELETE FROM '.$db->quote_table($this->_table);
 
@@ -87,22 +79,14 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
 		return $query;
 	}
 
-	/**
-	 * Reset the query parameters
-	 *
-	 * @return $this
-	 */
 	public function reset()
 	{
 		$this->_table = NULL;
-
-		$this->_where    = array();
-		$this->_order_by = array();
+		$this->_where = array();
 
 		$this->_parameters = array();
 
-		$this->_limit = NULL;
-
 		return $this;
 	}
-}
+
+} // End Database_Query_Builder_Delete

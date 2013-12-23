@@ -1,85 +1,59 @@
 <?php
+
 /**
- * Part of the Fuel framework.
+ * Fuel
  *
- * @package    Fuel
- * @version    1.7
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
+ *
+ * Image manipulation class.
+ *
+ * @package		Fuel
+ * @version		1.0
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
-abstract class Image_Driver
-{
+abstract class Image_Driver {
 
 	protected $image_fullpath  = null;
 	protected $image_directory = null;
 	protected $image_filename  = null;
 	protected $image_extension = null;
-	protected $new_extension   = null;
 	protected $config          = array();
 	protected $queued_actions  = array();
 	protected $accepted_extensions;
 
-	/**
-	 * Initialize by loading config
-	 *
-	 * @return void
-	 */
-	public static function _init()
-	{
-		\Config::load('image', true);
-	}
-
 	public function __construct($config)
 	{
-		if (is_array($config))
-		{
-			$this->config = array_merge(\Config::get('image', array()), $config);
-		}
-		else
-		{
-			$this->config = \Config::get('image', array());
-		}
-		$this->debug("Image Class was initialized using the " . $this->config['driver'] . " driver.");
+		$this->config = Config::load('image');
+		$this->config($config);
 	}
 	/**
 	 * Accepts configuration in either an array (as $index) or a pairing using $index and $value
 	 *
-	 * @param   string  $index  The index to be set, or an array of configuration options.
-	 * @param   mixed   $value  The value to be set if $index is not an array.
-	 * @return  Image_Driver
+	 * @param  string  $index  The index to be set, or an array of configuration options.
+	 * @param  mixed   $value  The value to be set if $index is not an array.
 	 */
 	public function config($index = null, $value = null)
 	{
 		if (is_array($index))
 		{
-			if (isset($index['driver']))
-			{
-				throw new \RuntimeException("The driver cannot be changed after initialization!");
-			}
 			$this->config = array_merge($this->config, $index);
 		}
 		elseif ($index != null)
 		{
-			if ($index == 'driver')
-			{
-				throw new \RuntimeException("The driver cannot be changed after initialization!");
-			}
 			$this->config[$index] = $value;
 		}
-
 		return $this;
 	}
 
 	/**
 	 * Exectues the presets set in the config. Additional parameters replace the $1, $2, ect.
 	 *
-	 * @param   string  $name  The name of the preset.
-	 * @return  Image_Driver
+	 * @param  string  $name  The name of the preset.
 	 */
 	public function preset($name)
 	{
@@ -99,26 +73,24 @@ abstract class Image_Driver
 						$action[$i] = preg_replace('#\$' . $x . '#', $vars[$x], $action[$i]);
 					}
 				}
-				call_fuel_func_array(array($this, $func), $action);
+				call_user_func_array(array($this, $func), $action);
 			}
 			$this->config = $old_config;
 		}
 		else
 		{
-			throw new \InvalidArgumentException("Could not load preset $name, you sure it exists?");
+			throw new \Fuel_Exception("Could not load preset $name, you sure it exists?");
 		}
-		return $this;
 	}
 
 	/**
-	 * Loads the image and checks if its compatible.
+	 * Loads the image and checks if its compatable.
 	 *
-	 * @param   string  $filename								The file to load
-	 * @param   string  $return_data						Decides if it should return the images data, or just "$this".
-	 * @param   mixed   $force_extension				Decides if it should force the extension witht this (or false)
+	 * @param   string  $filename     The file to load
+	 * @param   string  $return_data  Decides if it should return the images data, or just "$this".
 	 * @return  Image_Driver
 	 */
-	public function load($filename, $return_data = false, $force_extension = false)
+	public function load($filename, $return_data = false)
 	{
 		// First check if the filename exists
 		$filename = realpath($filename);
@@ -126,10 +98,10 @@ abstract class Image_Driver
 			'filename'    => $filename,
 			'return_data' => $return_data
 		);
-		if (is_file($filename))
+		if (file_exists($filename))
 		{
 			// Check the extension
-			$ext = $this->check_extension($filename, false, $force_extension);
+			$ext = $this->check_extension($filename);;
 			if ($ext !== false)
 			{
 				$return = array_merge($return, array(
@@ -148,12 +120,12 @@ abstract class Image_Driver
 			}
 			else
 			{
-				throw new \RuntimeException("The library does not support this filetype for $filename.");
+				throw new \Fuel_Exception("The library does not support this filetype for <i>$filename</i>.");
 			}
 		}
 		else
 		{
-			throw new \OutOfBoundsException("Image file $filename does not exist.");
+			throw new \Fuel_Exception("Image file <i>$filename</i> does not exist.");
 		}
 		return $return;
 	}
@@ -186,7 +158,7 @@ abstract class Image_Driver
 	 * @param   integer  $y1  Y-Coordinate for first set.
 	 * @param   integer  $x2  X-Coordinate for second set.
 	 * @param   integer  $y2  Y-Coordinate for second set.
-	 * @return  array    An array of variables for the specific driver.
+	 * @return  Array    An array of variables for the specific driver.
 	 */
 	protected function _crop($x1, $y1, $x2, $y2)
 	{
@@ -222,20 +194,6 @@ abstract class Image_Driver
 		return $this;
 	}
 
-
-	/**
-	 * Creates a vertical / horizontal or both mirror image.
-	 *
-	 * @access public
-	 * @param mixed $direction 'vertical', 'horizontal', 'both'
-	 * @return Image_Driver
-	 */
-	public function flip($direction)
-	{
-		$this->queue('flip', $direction);
-		return $this;
-	}
-
 	/**
 	 * Executes the resize event when the queue is ran.
 	 *
@@ -245,7 +203,7 @@ abstract class Image_Driver
 	 * @param   integer  $height  The new height of the image.
 	 * @param   boolean  $keepar  If false, allows stretching of the image.
 	 * @param   boolean  $pad     Adds padding to the image when resizing.
-	 * @return  array    An array of variables for the specific driver.
+	 * @return  Array    An array of variables for the specific driver.
 	 */
 	protected function _resize($width, $height = null, $keepar = true, $pad = true)
 	{
@@ -264,19 +222,18 @@ abstract class Image_Driver
 				$sizes = $this->sizes();
 				if ($height == null and $width != null)
 				{
-					$height = $width * ($sizes->height / $sizes->width);
+					$height = $width * ($sizes->width / $sizes->height);
 				}
 				elseif ($height != null and $width == null)
 				{
-					$width = $height * ($sizes->width / $sizes->height);
+					$width = $height * ($sizes->height / $sizes->width);
 				}
 				else
 				{
-					throw new \InvalidArgumentException("Width and height cannot be null.");
+					throw new \Fuel_Exception("Width and height cannot be null.");
 				}
 			}
 		}
-
 		$origwidth  = $this->convert_number($width, true);
 		$origheight = $this->convert_number($height, false);
 		$width      = $origwidth;
@@ -287,50 +244,25 @@ abstract class Image_Driver
 		if ($keepar)
 		{
 			// See which is the biggest ratio
-			if (function_exists('bcdiv'))
+			$width_ratio  = $width / $sizes->width;
+			$height_ratio = $height / $sizes->height;
+			if ($width_ratio < $height_ratio)
 			{
-				$width_ratio  = bcdiv($width, $sizes->width, 10);
-				$height_ratio = bcdiv($height, $sizes->height, 10);
-				$compare = bccomp($width_ratio, $height_ratio, 10);
-				if ($compare > -1)
-				{
-					$height = ceil((float) bcmul($sizes->height, $height_ratio, 10));
-					$width = ceil((float) bcmul($sizes->width, $height_ratio, 10));
-				}
-				else
-				{
-					$height = ceil((float) bcmul($sizes->height, $width_ratio, 10));
-					$width = ceil((float) bcmul($sizes->width, $width_ratio, 10));
-				}
+				$width = floor($sizes->width * $height_ratio);
 			}
 			else
 			{
-				$width_ratio  = $width / $sizes->width;
-				$height_ratio = $height / $sizes->height;
-				if ($width_ratio >= $height_ratio)
-				{
-					$height = ceil($sizes->height * $height_ratio);
-					$width = ceil($sizes->width * $height_ratio);
-				}
-				else
-				{
-					$height = ceil($sizes->height * $width_ratio);
-					$width = ceil($sizes->width * $width_ratio);
-				}
+				$height = floor($sizes->height * $width_ratio);
 			}
 		}
-
 		if ($pad)
 		{
 			$x = floor(($origwidth - $width) / 2);
 			$y = floor(($origheight - $height) / 2);
-		}
-		else
-		{
+		} else {
 			$origwidth  = $width;
 			$origheight = $height;
 		}
-
 		return array(
 			'width'   => $width,
 			'height'  => $height,
@@ -343,7 +275,6 @@ abstract class Image_Driver
 
 	public function crop_resize($width, $height = null)
 	{
-		is_null($height) and $height = $width;
 		$this->queue('crop_resize', $width, $height);
 		return $this;
 	}
@@ -354,41 +285,28 @@ abstract class Image_Driver
 		$sizes   = $this->sizes();
 		$width   = $this->convert_number($width, true);
 		$height  = $this->convert_number($height, false);
-
-		if (function_exists('bcdiv'))
+		$widthr  = $sizes->width / $width;
+		$heightr = $sizes->height / $height;
+		$x = $y = 0;
+		if ($widthr < $heightr)
 		{
-			if (bccomp(bcdiv($sizes->width, $width, 10), bcdiv($sizes->height, $height, 10), 10) < 1)
-			{
-				$this->_resize($width, 0, true, false);
-			}
-			else
-			{
-				$this->_resize(0, $height, true, false);
-			}
+			$this->_resize($width, null, true, false);
 		}
 		else
 		{
-			if ($sizes->width / $width < $sizes->height / $height)
-			{
-				$this->_resize($width, 0, true, false);
-			}
-			else
-			{
-				$this->_resize(0, $height, true, false);
-			}
+			$this->_resize(null, $height, true, false);
 		}
-
 		$sizes = $this->sizes();
-		$y = floor(max(0, $sizes->height - $height) / 2);
-		$x = floor(max(0, $sizes->width - $width) / 2);
+		$y = floor(($sizes->height - $height) / 2);
+		$x = floor(($sizes->width - $width) / 2);
 		$this->_crop($x, $y, $x + $width, $y + $height);
 	}
 
 	/**
 	 * Rotates the image
 	 *
-	 * @param   integer  $degrees  The degrees to rotate, negatives integers allowed.
-	 * @return  Image_Driver
+	 * @param	integer	$degrees	The degrees to rotate, negatives integers allowed.
+	 * @param	Image_Driver
 	 */
 	public function rotate($degrees)
 	{
@@ -401,8 +319,8 @@ abstract class Image_Driver
 	 *
 	 * Formats the rotate method input for use with driver specific methods
 	 *
-	 * @param   integer  $degrees  The degrees to rotate, negatives integers allowed.
-	 * @return  array    An array of variables for the specific driver.
+	 * @param	integer	$degrees	The degrees to rotate, negatives integers allowed.
+	 * @return	Array	An array of variables for the specific driver.
 	 */
 	protected function _rotate($degrees)
 	{
@@ -419,10 +337,10 @@ abstract class Image_Driver
 	/**
 	 * Adds a watermark to the image.
 	 *
-	 * @param   string   $filename  The filename of the watermark file to use.
-	 * @param   string   $position  The position of the watermark, ex: "bottom right", "center center", "top left"
-	 * @param   integer  $padding   The amount of padding (in pixels) from the position.
-	 * @return  Image_Driver
+	 * @param	string	$filename	The filename of the watermark file to use.
+	 * @param	string	$position	The position of the watermark, ex: "bottom right", "center center", "top left"
+	 * @param	integer	$padding	The amount of padding (in pixels) from the position.
+	 * @param	Image_Driver
 	 */
 	public function watermark($filename, $position, $padding = 5)
 	{
@@ -435,16 +353,16 @@ abstract class Image_Driver
 	 *
 	 * Formats the watermark method input for use with driver specific methods
 	 *
-	 * @param   string   $filename  The filename of the watermark file to use.
-	 * @param   string   $position  The position of the watermark, ex: "bottom right", "center center", "top left"
-	 * @param   integer  $padding   The amount of padding (in pixels) from the position.
-	 * @return  array    An array of variables for the specific driver.
+	 * @param	string	$filename	The filename of the watermark file to use.
+	 * @param	string	$position	The position of the watermark, ex: "bottom right", "center center", "top left"
+	 * @param	integer	$padding	The amount of padding (in pixels) from the position.
+	 * @return	Array	An array of variables for the specific driver.
 	 */
 	protected function _watermark($filename, $position, $padding = 5)
 	{
 		$filename = realpath($filename);
 		$return = false;
-		if (is_file($filename) and $this->check_extension($filename, false))
+		if (file_exists($filename) and $this->check_extension($filename, false))
 		{
 			$x = 0;
 			$y = 0;
@@ -492,9 +410,9 @@ abstract class Image_Driver
 	/**
 	 * Adds a border to the image.
 	 *
-	 * @param   integer  $size   The side of the border, in pixels.
-	 * @param   string   $color  A hexadecimal color.
-	 * @return  Image_Driver
+	 * @param	integer	$size	The side of the border, in pixels.
+	 * @param	string	$color	A hexidecimal color.
+	 * @param	Image_Driver
 	 */
 	public function border($size, $color = null)
 	{
@@ -507,9 +425,9 @@ abstract class Image_Driver
 	 *
 	 * Formats the border method input for use with driver specific methods
 	 *
-	 * @param   integer  $size   The side of the border, in pixels.
-	 * @param   string   $color  A hexadecimal color.
-	 * @return  array    An array of variables for the specific driver.
+	 * @param	integer	$size	The side of the border, in pixels.
+	 * @param	string	$color	A hexidecimal color.
+	 * @return	Array	An array of variables for the specific driver.
 	 */
 	protected function _border($size, $color = null)
 	{
@@ -524,8 +442,8 @@ abstract class Image_Driver
 	/**
 	 * Masks the image using the alpha channel of the image input.
 	 *
-	 * @param   string  $maskimage  The location of the image to use as the mask
-	 * @return  Image_Driver
+	 * @param	string	$maskimage	The location of the image to use as the mask
+	 * @return	Image_Driver
 	 */
 	public function mask($maskimage)
 	{
@@ -538,8 +456,8 @@ abstract class Image_Driver
 	 *
 	 * Formats the mask method input for use with driver specific methods
 	 *
-	 * @param   string  $maskimage  The location of the image to use as the mask
-	 * @return  array   An array of variables for the specific driver.
+	 * @param	string	$maskimage	The location of the image to use as the mask
+	 * @return	Array	An array of variables for the specific driver.
 	 */
 	protected function _mask($maskimage)
 	{
@@ -551,10 +469,10 @@ abstract class Image_Driver
 	/**
 	 * Adds rounded corners to the image.
 	 *
-	 * @param   integer  $radius
-	 * @param   integer  $sides      Accepts any combination of "tl tr bl br" separated by spaces, or null for all sides
-	 * @param   integer  $antialias  Sets the antialias range.
-	 * @return  Image_Driver
+	 * @param	integer	$radius
+	 * @param	integer	$sides	Accepts any combination of "tl tr bl br" seperated by spaces, or null for all sides
+	 * @param	integer	$antialias	Sets the antialias range.
+	 * @return	Image_Driver
 	 */
 	public function rounded($radius, $sides = null, $antialias = null)
 	{
@@ -562,15 +480,20 @@ abstract class Image_Driver
 		return $this;
 	}
 
+	public function _round_border($radius, $borderwidth, $color)
+	{
+		$this->rounded($radius);
+	}
+
 	/**
 	 * Executes the rounded event when the queue is ran.
 	 *
 	 * Formats the rounded method input for use with driver specific methods
 	 *
-	 * @param   integer  $radius
-	 * @param   integer  $sides      Accepts any combination of "tl tr bl br" separated by spaces, or null for all sides
-	 * @param   integer  $antialias  Sets the antialias range.
-	 * @return  array    An array of variables for the specific driver.
+	 * @param	integer	$radius
+	 * @param	integer	$sides	Accepts any combination of "tl tr bl br" seperated by spaces, or null for all sides
+	 * @param	integer	$antialias	Sets the antialias range.
+	 * @return	Array	An array of variables for the specific driver.
 	 */
 	protected function _rounded($radius, $sides, $antialias)
 	{
@@ -582,7 +505,7 @@ abstract class Image_Driver
 			$sides = explode(' ', $sides);
 			foreach ($sides as $side)
 			{
-				if ($side == 'tl' or $side == 'tr' or $side == 'bl' or $side == 'br')
+				if ($side == 'tl' || $side == 'tr' || $side == 'bl' || $side == 'br')
 				{
 					$$side = true;
 				}
@@ -601,55 +524,34 @@ abstract class Image_Driver
 	}
 
 	/**
-	 * Turns the image into a grayscale version
-	 *
-	 * @return  Image_Driver
-	 */
-	public function grayscale()
-	{
-		$this->queue('grayscale');
-		return $this;
-	}
-
-	/**
-	 * Executes the grayscale event when the queue is ran.
-	 */
-	abstract protected function _grayscale();
-
-	/**
 	 * Saves the image, and optionally attempts to set permissions
 	 *
-	 * @param   string  $filename     The location where to save the image.
-	 * @param   string  $permissions  Allows unix style permissions
-	 * @return  array
+	 * @param	string	$filename	The location where to save the image.
+	 * @param	string	$permissions	Allows unix style permissions
 	 */
-	public function save($filename = null, $permissions = null)
+	public function save($filename, $permissions = null)
 	{
-		if (empty($filename))
-		{
-			$filename = $this->image_filename;
-		}
-
 		$directory = dirname($filename);
 		if ( ! is_dir($directory))
 		{
-			throw new \OutOfBoundsException("Could not find directory \"$directory\"");
+			throw new \Fuel_Exception("Could not find directory \"$directory\"");
 		}
 
-		if ( ! $this->check_extension($filename, true))
-		{
-			$filename .= "." . $this->image_extension;
-		}
 		// Touch the file
 		if ( ! touch($filename))
 		{
-			throw new \RuntimeException("Do not have permission to write to \"$filename\"");
+			throw new \Fuel_Exception("Do not have permission to write to \"$filename\"");
 		}
 
 		// Set the new permissions
 		if ($permissions != null and ! chmod($filename, $permissions))
 		{
-			throw new \RuntimeException("Could not set permissions on the file.");
+			throw new \Fuel_Exception("Could not set permissions on the file.");
+		}
+
+		if ( ! $this->check_extension($filename, true))
+		{
+			$filename .= "." . $this->image_extension;
 		}
 
 		$this->debug("", "Saving image as <code>$filename</code>");
@@ -661,17 +563,15 @@ abstract class Image_Driver
 	/**
 	 * Saves the file in the original location, adding the append and prepend to the filename.
 	 *
-	 * @param   string   $append       The string to append to the filename
-	 * @param   string   $prepend      The string to prepend to the filename
-	 * @param   string   $extension    The extension to save the image as, null defaults to the loaded images extension.
-	 * @param   integer  $permissions  The permissions to attempt to set on the file.
-	 * @return  Image_Driver
+	 * @param  string   $append       The string to append to the filename
+	 * @param  string   $prepend      The string to prepend to the filename
+	 * @param  string   $extension    The extension to save the image as, null defaults to the loaded images extension.
+	 * @param  integer  $permissions  The permissions to attempt to set on the file.
 	 */
 	public function save_pa($append, $prepend = null, $extension = null, $permissions = null)
 	{
 		$filename = substr($this->image_filename, 0, -(strlen($this->image_extension) + 1));
-		$fullpath = $this->image_directory.'/'.$append.$filename.$prepend.'.'.
-			($extension !== null ? $extension : $this->image_extension);
+		$fullpath = $this->image_directory.'/'.$append.$filename.$prepend.'.'.($extension !== null ? $extension : $this->image_extension);
 		$this->save($fullpath, $permissions);
 		return $this;
 	}
@@ -679,8 +579,7 @@ abstract class Image_Driver
 	/**
 	 * Outputs the file directly to the user.
 	 *
-	 * @param   string  $filetype  The extension type to use. Ex: png, jpg, gif
-	 * @return  array
+	 * @param	string	$filetype	The extension type to use. Ex: png, jpg, gif
 	 */
 	public function output($filetype = null)
 	{
@@ -693,14 +592,12 @@ abstract class Image_Driver
 		{
 			if ( ! $this->config['debug'])
 			{
-				$mimetype = $filetype === 'jpg' ? 'jpeg' : $filetype;
-				header('Content-Type: image/' . $mimetype);
+				header('Content-Type: image/' . $filetype);
 			}
-			$this->new_extension = $filetype;
 		}
 		else
 		{
-			throw new \FuelException("Image extension $filetype is unsupported.");
+			throw new \Fuel_Exception("Image extension $filetype is unsupported.");
 		}
 
 		$this->debug('', "Outputting image as $filetype");
@@ -712,8 +609,8 @@ abstract class Image_Driver
 	/**
 	 * Returns sizes for the currently loaded image, or the image given in the $filename.
 	 *
-	 * @param   string  $filename  The location of the file to get sizes for.
-	 * @return  object  An object containing width and height variables.
+	 * @param	string	$filename	The location of the file to get sizes for.
+	 * @return	object	An object containing width and height variables.
 	 */
 	abstract public function sizes($filename = null);
 
@@ -723,75 +620,18 @@ abstract class Image_Driver
 	abstract protected function add_background();
 
 	/**
-	 * Creates a new color usable by all drivers.
-	 *
-	 * @param   string   $hex    The hex code of the color
-	 * @return  array    rgba representation of the hex and alpha values.
-	 */
-	protected function create_hex_color($hex)
-	{
-		if ($hex == null)
-		{
-			$red = 0;
-			$green = 0;
-			$blue = 0;
-			$alpha = 0;
-		}
-		else
-		{
-			// Check if theres a # in front
-			if (substr($hex, 0, 1) == '#')
-			{
-				$hex = substr($hex, 1);
-			}
-
-			// Break apart the hex
-			if (strlen($hex) == 6 or strlen($hex) == 8)
-			{
-				$red   = hexdec(substr($hex, 0, 2));
-				$green = hexdec(substr($hex, 2, 2));
-				$blue  = hexdec(substr($hex, 4, 2));
-				$alpha = hexdec(substr($hex, 6, 2));
-			}
-			else
-			{
-				$red   = hexdec(substr($hex, 0, 1).substr($hex, 0, 1));
-				$green = hexdec(substr($hex, 1, 1).substr($hex, 1, 1));
-				$blue  = hexdec(substr($hex, 2, 1).substr($hex, 2, 1));
-				$alpha = hexdec(substr($hex, 3, 1).substr($hex, 3, 1));
-			}
-		}
-		
-		$alpha = floor($alpha / 2.55);
-
-		return array(
-			'red' => $red,
-			'green' => $green,
-			'blue' => $blue,
-			'alpha' => $alpha,
-		);
-	}
-
-	/**
 	 * Checks if the extension is accepted by this library, and if its valid sets the $this->image_extension variable.
 	 *
-	 * @param   string   $filename
-	 * @param   boolean  $writevar					Decides if the extension should be written to $this->image_extension
-	 * @param   mixed		 $force_extension		Decides if the extension should be overridden with this (or false)
-	 * @return  boolean
+	 * @param	string	$filename
+	 * @param	boolean	$writevar	Decides if the extension should be written to $this->image_extension
+	 * @return	boolean
 	 */
-	protected function check_extension($filename, $writevar = true, $force_extension = false)
+	protected function check_extension($filename, $writevar = true)
 	{
 		$return = false;
-
-		if ($force_extension !== false and in_array($force_extension, $this->accepted_extensions))
+		foreach ($this->accepted_extensions AS $ext)
 		{
-			return $force_extension;
-		}
-
-		foreach ($this->accepted_extensions as $ext)
-		{
-			if (strtolower(substr($filename, strlen($ext) * -1)) == strtolower($ext))
+			if (substr($filename, strlen($ext) * -1) == $ext)
 			{
 				$writevar and $this->image_extension = $ext;
 				$return = $ext;
@@ -803,20 +643,14 @@ abstract class Image_Driver
 	/**
 	 * Converts percentages, negatives, and other values to absolute integers.
 	 *
-	 * @param   string   $input
-	 * @param   boolean  $x  Determines if the number relates to the x-axis or y-axis.
-	 * @return  integer  The converted number, usable with the image being edited.
+	 * @param	string	$input
+	 * @param	boolean	$x	Determines if the number relates to the x-axis or y-axis.
+	 * @return	integer	The converted number, useable with the image being edited.
 	 */
 	protected function convert_number($input, $x = null)
 	{
-		// Sanitize double negatives
+		// Sanatize double negatives
 		$input = str_replace('--', '', $input);
-		
-		// Depending on php configuration, float are sometimes converted to strings
-		// using commas instead of points. This notation can create issues since the
-		// conversion from string to float will return an integer.
-		// For instance: "1.2" / 10 == 0.12 but "1,2" / 10 == 0.1...
-		$input = str_replace(',', '.', $input);
 
 		$orig = $input;
 		$sizes = $this->sizes();
@@ -827,7 +661,7 @@ abstract class Image_Driver
 			$input = floor((substr($input, 0, -1) / 100) * $size);
 		}
 		// Negatives are based off the bottom right
-		if ($x !== null and $input < 0)
+		if ($x !== null && $input < 0)
 		{
 			$input = $size + $input;
 		}
@@ -837,7 +671,7 @@ abstract class Image_Driver
 	/**
 	 * Queues a function to run at a later time.
 	 *
-	 * @param  string  $function  The name of the function to be ran, without the leading _
+	 * @param	string	$function	The name of the function to be ran, without the leading _
 	 */
 	protected function queue($function)
 	{
@@ -855,11 +689,11 @@ abstract class Image_Driver
 	/**
 	 * Runs all queued actions on the loaded image.
 	 *
-	 * @param  boolean  $clear  Decides if the queue should be cleared once completed.
+	 * @param	boolean	$clear	Decides if the queue should be cleared once completed.
 	 */
 	public function run_queue($clear = null)
 	{
-		foreach ($this->queued_actions as $action)
+		foreach ($this->queued_actions AS $action)
 		{
 			$tmpfunc = array();
 			for ($i = 0; $i < count($action); $i++)
@@ -869,38 +703,16 @@ abstract class Image_Driver
 			$this->debug('', "<b>Executing <code>" . implode(", ", $tmpfunc) . "</code></b>");
 			call_user_func_array(array(&$this, '_' . $action[0]), array_slice($action, 1));
 		}
-		if (($clear === null and $this->config['clear_queue']) or $clear === true)
+		if (($clear === null && $this->config['clear_queue']) || $clear === true)
 		{
 			$this->queued_actions = array();
 		}
 	}
 
 	/**
-	 * Reloads the image.
-	 *
-	 * @return  Image_Driver
-	 */
-	public function reload()
-	{
-		$this->debug("Reloading was called!");
-		$this->load($this->image_fullpath);
-		return $this;
-	}
-
-	/**
-	 * Get the file extension (type) worked out on construct
-	 *
-	 * @return  string  File extension
-	 */
-	public function extension()
-	{
-		return $this->image_extension;
-	}
-
-	/**
 	 * Used for debugging image output.
 	 *
-	 * @param  string  $message
+	 * @param	string	$message
 	 */
 	protected function debug()
 	{
@@ -915,3 +727,4 @@ abstract class Image_Driver
 	}
 }
 
+// End of file driver.php

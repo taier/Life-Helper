@@ -1,12 +1,14 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -17,12 +19,11 @@ namespace Fuel\Core;
  *
  * A base controller for easily creating templated output.
  *
- * @package   Fuel
- * @category  Core
- * @author    Fuel Development Team
+ * @package		Fuel
+ * @category	Core
+ * @author		Fuel Development Team
  */
-abstract class Controller_Template extends \Controller
-{
+abstract class Controller_Template extends \Controller {
 
 	/**
 	* @var string page template
@@ -30,33 +31,32 @@ abstract class Controller_Template extends \Controller
 	public $template = 'template';
 
 	/**
-	 * Load the template and create the $this->template object
-	 */
+	* @var boolean auto render template
+	**/
+	public $auto_render = true;
+
+	// Load the template and create the $this->template object
 	public function before()
 	{
-		if ( ! empty($this->template) and is_string($this->template))
+		if ($this->auto_render === true)
 		{
 			// Load the template
-			$this->template = \View::forge($this->template);
+			$this->template = \View::factory($this->template);
 		}
 
 		return parent::before();
 	}
 
-	/**
-	 * After controller method has run output the template
-	 *
-	 * @param  Response  $response
-	 */
-	public function after($response)
+	// After contorller method has run output the template
+	public function after()
 	{
-		// If nothing was returned default to the template
-		if ($response === null)
+		if ($this->auto_render === true)
 		{
-			$response = $this->template;
+			$this->response->body($this->template);
 		}
 
-		return parent::after($response);
+		return parent::after();
 	}
 
 }
+/* End of file template.php */

@@ -2,7 +2,7 @@
 /**
  * Database object creation helper methods.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
@@ -13,8 +13,7 @@ namespace Fuel\Core;
 
 
 
-class DB
-{
+class DB {
 
 	// Query types
 	const SELECT =  1;
@@ -46,26 +45,6 @@ class DB
 	public static function query($sql, $type = null)
 	{
 		return new \Database_Query($sql, $type);
-	}
-
-	/*
-	 * Returns the last query
-	 *
-	 * @return	string	the last query
-	 */
-	public static function last_query($db = null)
-	{
-		return \Database_Connection::instance($db)->last_query;
-	}
-
-	/*
-	 * Returns the DB drivers error info
-	 *
-	 * @return	mixed	the DB drivers error info
-	 */
-	public static function error_info($db = null)
-	{
-		return \Database_Connection::instance($db)->error_info();
 	}
 
 	/**
@@ -156,21 +135,6 @@ class DB
 	public static function expr($string)
 	{
 		return new \Database_Expression($string);
-	}
-
-	/**
-	 * Create a new [Database_Expression] containing a quoted identifier. An expression
-	 * is the only way to use SQL functions within query builders.
-	 *
-	 *     $expression = DB::identifier('users.id');	// returns `users`.`id` for MySQL
-	 *
-	 * @param	string	$string	the string to quote
-	 * @param	string	$db		the database connection to use
-	 * @return	Database_Expression
-	 */
-	public static function identifier($string, $db = null)
-	{
-		return new \Database_Expression(static::quote_identifier($string, $db));
 	}
 
 	/**
@@ -329,7 +293,7 @@ class DB
 	 * @param   string  db connection
 	 * @return  integer
 	 */
-	public static function count_last_query($db = null)
+	public function count_last_query($db = null)
 	{
 		return \Database_Connection::instance($db)->count_last_query();
 	}
@@ -346,20 +310,24 @@ class DB
 	 */
 	public static function set_charset($charset, $db = null)
 	{
-		\Database_Connection::instance($db)->set_charset($charset);
+		return \Database_Connection::instance($db)->set_charset($charset);
 	}
 
 	/**
-	 * Checks whether a connection is in transaction.
+	 * Sets the Database instance to use transactions
+	 * Transactions are OFF by default
 	 *
-	 *     DB::in_transaction();
+	 *     DB::transactional();
+	 *     DB::transactional(TRUE);
+	 *     DB::transactional(FALSE);
 	 *
+	 * @param   bool   use tranactions TRUE/FALSE
 	 * @param   string  db connection
-	 * @return  bool
+	 * @return  void
 	 */
-	public static function in_transaction($db = null)
+	public static function transactional($use_trans = true, $db = null)
 	{
-		return \Database_Connection::instance($db)->in_transaction();
+		return \Database_Connection::instance($db)->transactional($use_trans);
 	}
 
 	/**
@@ -368,7 +336,7 @@ class DB
 	 *     DB::start_transaction();
 	 *
 	 * @param   string  db connection
-	 * @return  bool
+	 * @return  void
 	 */
 	public static function start_transaction($db = null)
 	{
@@ -381,7 +349,7 @@ class DB
 	 *     DB::commit_transaction();
 	 *
 	 * @param   string  db connection
-	 * @return  bool
+	 * @return  void
 	 */
 	public static function commit_transaction($db = null)
 	{
@@ -394,11 +362,11 @@ class DB
 	 *     DB::rollback_transaction();
 	 *
 	 * @param   string  db connection
-	 * @return  bool
+	 * @return  void
 	 */
 	public static function rollback_transaction($db = null)
 	{
 		return \Database_Connection::instance($db)->rollback_transaction();
 	}
 
-}
+} // End DB

@@ -2,7 +2,7 @@
 /**
  * Database result wrapper.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query/Result
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -15,37 +15,25 @@ namespace Fuel\Core;
 
 abstract class Database_Result implements \Countable, \Iterator, \SeekableIterator, \ArrayAccess {
 
-	/**
-	 * @var  string Executed SQL for this result
-	 */
+	// Executed SQL for this result
 	protected $_query;
 
-	/**
-	 * @var  resource  $_result raw result resource
-	 */
+	// Raw result resource
 	protected $_result;
 
-	/**
-	 * @var  int  $_total_rows total number of rows
-	 */
+	// Total number of rows and current row
 	protected $_total_rows  = 0;
-
-	/**
-	 * @var  int  $_current_row  current row number
-	 */
 	protected $_current_row = 0;
 
-	/**
-	 * @var  bool  $_as_object  return rows as an object or associative array
-	 */
+	// Return rows as an object or associative array
 	protected $_as_object;
 
 	/**
 	 * Sets the total number of rows and stores the result locally.
 	 *
-	 * @param  mixed   $result     query result
-	 * @param  string  $sql        SQL query
-	 * @param  mixed   $as_object  object
+	 * @param   mixed   query result
+	 * @param   string  SQL query
+	 * @return  void
 	 */
 	public function __construct($result, $sql, $as_object)
 	{
@@ -101,11 +89,11 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 	 * @param   string  column for values
 	 * @return  array
 	 */
-	public function as_array($key = null, $value = null)
+	public function as_array($key = NULL, $value = NULL)
 	{
 		$results = array();
 
-		if ($key === null and $value === null)
+		if ($key === NULL AND $value === NULL)
 		{
 			// Indexed rows
 
@@ -114,7 +102,7 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 				$results[] = $row;
 			}
 		}
-		elseif ($key === null)
+		elseif ($key === NULL)
 		{
 			// Indexed columns
 
@@ -133,7 +121,7 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 				}
 			}
 		}
-		elseif ($value === null)
+		elseif ($value === NULL)
 		{
 			// Associative rows
 
@@ -183,31 +171,26 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 	 *     // Get the "id" value
 	 *     $id = $result->get('id');
 	 *
-	 * @param   string $name    column to get
-	 * @param   mixed  $default default value if the column does not exist
-	 *
+	 * @param   string  column to get
+	 * @param   mixed   default value if the column does not exist
 	 * @return  mixed
 	 */
-	public function get($name, $default = null)
+	public function get($name, $default = NULL)
 	{
 		$row = $this->current();
 
 		if ($this->_as_object)
 		{
 			if (isset($row->$name))
-			{
 				return $row->$name;
-			}
 		}
 		else
 		{
 			if (isset($row[$name]))
-			{
 				return $row[$name];
-			}
 		}
 
-		return \Fuel::value($default);
+		return $default;
 	}
 
 	/**
@@ -230,13 +213,11 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 	 *         // Row 10 exists
 	 *     }
 	 *
-	 * @param integer $offset
-	 *
-	 * @return boolean
+	 * @return  boolean
 	 */
 	public function offsetExists($offset)
 	{
-		return ($offset >= 0 and $offset < $this->_total_rows);
+		return ($offset >= 0 AND $offset < $this->_total_rows);
 	}
 
 	/**
@@ -244,45 +225,40 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 	 *
 	 *     $row = $result[10];
 	 *
-	 * @param integer $offset
-	 *
 	 * @return  mixed
 	 */
 	public function offsetGet($offset)
 	{
 		if ( ! $this->seek($offset))
-		{
-			return null;
-		}
+			return NULL;
 
 		return $this->current();
 	}
 
 	/**
 	 * Implements [ArrayAccess::offsetSet], throws an error.
+	 *
 	 * [!!] You cannot modify a database result.
 	 *
-	 * @param integer $offset
-	 * @param mixed   $value
-	 *
-	 * @throws  \FuelException
+	 * @return  void
+	 * @throws  Exception
 	 */
 	final public function offsetSet($offset, $value)
 	{
-		throw new \FuelException('Database results are read-only');
+		throw new \Fuel_Exception('Database results are read-only');
 	}
 
 	/**
 	 * Implements [ArrayAccess::offsetUnset], throws an error.
+	 *
 	 * [!!] You cannot modify a database result.
 	 *
-	 * @param integer $offset
-	 *
-	 * @throws  \FuelException
+	 * @return  void
+	 * @throws  Exception
 	 */
 	final public function offsetUnset($offset)
 	{
-		throw new \FuelException('Database results are read-only');
+		throw new \Fuel_Exception('Database results are read-only');
 	}
 
 	/**
@@ -348,4 +324,4 @@ abstract class Database_Result implements \Countable, \Iterator, \SeekableIterat
 		return $this->offsetExists($this->_current_row);
 	}
 
-}
+} // End Database_Result

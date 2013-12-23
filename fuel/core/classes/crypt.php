@@ -1,22 +1,26 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
+import('phpseclib/Crypt/AES', 'vendor');
+import('phpseclib/Crypt/Hash', 'vendor');
+
 use \PHPSecLib\Crypt_AES;
 use \PHPSecLib\Crypt_Hash;
 
-class Crypt
-{
+class Crypt {
 
 	/*
 	 * Crypto object used to encrypt/decrypt
@@ -55,11 +59,10 @@ class Crypt
 		$update = false;
 		foreach(array('crypto_key', 'crypto_iv', 'crypto_hmac') as $key)
 		{
-			if ( empty(static::$config[$key]) or (strlen(static::$config[$key]) % 4) != 0)
+			if ( empty(static::$config[$key]) || (strlen(static::$config[$key]) % 4) != 0)
 			{
 				$crypto = '';
-				for ($i = 0; $i < 8; $i++)
-				{
+				for ($i = 0; $i < 8; $i++) {
 					$crypto .= static::safe_b64encode(pack('n', mt_rand(0, 0xFFFF)));
 				}
 				static::$config[$key] = $crypto;
@@ -70,21 +73,13 @@ class Crypt
 		// update the config if needed
 		if ($update === true)
 		{
-			// load the file config
-			\Config::load('file', true);
-
 			try
 			{
 				\Config::save('crypt', static::$config);
-				chmod(APPPATH.'config'.DS.'crypt.php', \Config::get('file.chmod.files', 0666));
 			}
-			catch (\FileAccessException $e)
+			catch (\File_Exception $e)
 			{
-				// failed to write the config file, inform the user
-				echo \View::forge('errors/crypt_keys', array(
-					'keys' => static::$config
-				));
-				die();
+				throw new \Exception('Crypt keys are invalid or missing, and app/config/crypt.php could not be written.');
 			}
 		}
 
@@ -144,16 +139,15 @@ class Crypt
 	private static function safe_b64encode($value)
 	{
 		$data = base64_encode($value);
-		$data = str_replace(array('+','/','='), array('-','_',''), $data);
+		$data = str_replace(array('+','/','='),array('-','_',''),$data);
 		return $data;
 	}
 
 	private static function safe_b64decode($value)
 	{
-		$data = str_replace(array('-','_'), array('+','/'), $value);
+		$data = str_replace(array('-','_'),array('+','/'),$value);
 		$mod4 = strlen($data) % 4;
-		if ($mod4)
-		{
+		if ($mod4) {
 			$data .= substr('====', $mod4);
 		}
 		return base64_decode($data);
@@ -180,22 +174,20 @@ class Crypt
 		return (static::secure_compare(static::safe_b64encode(static::$hasher->hash($value)), $hmac)) ? $value : false;
 	}
 
-	private static function secure_compare($a, $b)
-	{
+	private static function secure_compare($a, $b) {
+
 		// make sure we're only comparing equal length strings
-		if (strlen($a) !== strlen($b))
-		{
+		if (strlen($a) !== strlen($b)) {
 			return false;
 		}
 
 		// and that all comparisons take equal time
 		$result = 0;
-		for ($i = 0; $i < strlen($a); $i++)
-		{
+		for ($i = 0; $i < strlen($a); $i++) {
 			$result |= ord($a[$i]) ^ ord($b[$i]);
 		}
 		return $result == 0;
 	}
 }
 
-
+/* End of file crypt.php */

@@ -5,10 +5,10 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -23,8 +23,7 @@ namespace Oil;
  * @author		Phil Sturgeon
  */
 
-class Console
-{
+class Console {
 
 	public function __construct()
 	{
@@ -39,32 +38,11 @@ class Console
 		{
 			 ob_end_clean();
 		}
-
+		
 		ob_implicit_flush(true);
 
 		// And, go!
 		self::main();
-	}
-
-	public static function help()
-	{
-		$output = <<<HELP
-
-Usage:
-  php oil [c|console]
-
-Description:
-  Opens a commandline console to your FuelPHP installation. This allows
-  you to run any FuelPHP command interactively.
-
-Examples:
-  php oil console
-
-Documentation:
-  http://fuelphp.com/docs/packages/oil/console.html
-HELP;
-		\Cli::write($output);
-
 	}
 
 	private function main()
@@ -111,19 +89,10 @@ HELP;
 			ob_start();
 
 			// Unset the previous line and execute the new one
-			$random_ret = \Str::random();
-			try
-			{
-				$ret = eval("unset(\$__line); $__line;");
-			}
-			catch(\Exception $e)
-			{
-				$ret = $random_ret;
-				$__line = $e->getMessage();
-			}
+			$ret = eval("unset(\$__line); $__line;");
 
 			// Error was returned
-			if ($ret === $random_ret)
+			if ($ret === false)
 			{
 				\Cli::error('Parse Error - ' . $__line);
 				\Cli::beep();
@@ -238,7 +207,7 @@ HELP;
 		ob_end_clean();
 
 		$x = strip_tags($x);
-		$x = explode("\n", $x);	// PHP_EOL doesn't work on Windows
+		$x = explode(PHP_EOL, $x);
 		$s = array('Build Date => ', 'Build Date ');
 
 		foreach ($x as $i)

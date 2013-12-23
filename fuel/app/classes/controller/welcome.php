@@ -1,58 +1,42 @@
 <?php
-/**
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package    Fuel
- * @version    1.7
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
- */
 
 /**
  * The Welcome Controller.
  *
  * A basic controller example.  Has examples of how to set the
  * response body and status.
- *
+ * 
  * @package  app
  * @extends  Controller
  */
-class Controller_Welcome extends Controller
-{
+class Controller_Welcome extends Controller_Common {
 
 	/**
-	 * The basic welcome message
-	 *
+	 * The index action.
+	 * 
 	 * @access  public
-	 * @return  Response
+	 * @return  void
 	 */
 	public function action_index()
 	{
-		return Response::forge(View::forge('welcome/index'));
-	}
-
-	/**
-	 * A typical "Hello, Bob!" type example.  This uses a ViewModel to
-	 * show how to use them.
-	 *
-	 * @access  public
-	 * @return  Response
-	 */
-	public function action_hello()
-	{
-		return Response::forge(ViewModel::forge('welcome/hello'));
+		$this->response->body = View::factory('welcome/index');
 	}
 
 	/**
 	 * The 404 action for the application.
-	 *
+	 * 
 	 * @access  public
-	 * @return  Response
+	 * @return  void
 	 */
 	public function action_404()
 	{
-		return Response::forge(ViewModel::forge('welcome/404'), 404);
+		$messages = array('Aw, crap!', 'Bloody Hell!', 'Uh Oh!', 'Nope, not here.', 'Huh?');
+		$data['title'] = $messages[array_rand($messages)];
+
+		// Set a HTTP 404 output header
+		$this->response->status = 404;
+		$this->response->body = View::factory('welcome/404', $data);
 	}
 }
+
+/* End of file welcome.php */

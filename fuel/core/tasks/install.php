@@ -1,12 +1,14 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -16,15 +18,14 @@ namespace Fuel\Tasks;
  * Install task
  *
  * Run this task to set default write permissions and environment stuff
- * for your app. This could be expanded in app/tasks for application specific stuff.
+ * for your app. This could be expanded in app/tasks for applicaiton specific stuff.
  *
  * @package		Fuel
  * @version		1.0
  * @author		Phil Sturgeon
  */
 
-class Install
-{
+class Install {
 
 	public static function run()
 	{
@@ -36,6 +37,7 @@ class Install
 			{
 				\Cli::write("\t".'Made writable: '.$path, 'green');
 			}
+
 			else
 			{
 				\Cli::write("\t".'Failed to make writable: '.$path, 'red');
@@ -44,3 +46,4 @@ class Install
 	}
 }
 
+/* End of file tasks/install.php */

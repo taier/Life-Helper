@@ -29,39 +29,41 @@ namespace PHPSecLib;
  * ?>
  * </code>
  *
- * LICENSE: Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * LICENSE: This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA  02111-1307  USA
  *
  * @category   Crypt
  * @package    Crypt_TripleDES
  * @author     Jim Wigginton <terrafrost@php.net>
  * @copyright  MMVII Jim Wigginton
- * @license    http://www.opensource.org/licenses/mit-license.html  MIT License
+ * @license    http://www.gnu.org/licenses/lgpl.txt
  * @version    $Id: TripleDES.php,v 1.13 2010/02/26 03:40:25 terrafrost Exp $
  * @link       http://phpseclib.sourceforge.net
  */
+
+/**
+ * Include Crypt_DES
+ */
+require_once 'DES.php';
 
 /**
  * Encrypt / decrypt using inner chaining
  *
  * Inner chaining is used by SSH-1 and is generally considered to be less secure then outer chaining (CRYPT_DES_MODE_CBC3).
  */
-define('CRYPT_DES_MODE_3CBC', -2);
+define('CRYPT_DES_MODE_3CBC', 3);
 
 /**
  * Encrypt / decrypt using outer chaining
@@ -156,7 +158,7 @@ class Crypt_TripleDES {
      * The mcrypt resource can be recreated every time something needs to be created or it can be created just once.
      * Since mcrypt operates in continuous mode, by default, it'll need to be recreated when in non-continuous mode.
      *
-     * @see Crypt_TripleDES::encrypt()
+     * @see Crypt_AES::encrypt()
      * @var String
      * @access private
      */
@@ -168,68 +170,21 @@ class Crypt_TripleDES {
      * The mcrypt resource can be recreated every time something needs to be created or it can be created just once.
      * Since mcrypt operates in continuous mode, by default, it'll need to be recreated when in non-continuous mode.
      *
-     * @see Crypt_TripleDES::decrypt()
+     * @see Crypt_AES::decrypt()
      * @var String
      * @access private
      */
     var $demcrypt;
 
     /**
-     * Does the enmcrypt resource need to be (re)initialized?
+     * Does the (en|de)mcrypt resource need to be (re)initialized?
      *
-     * @see Crypt_TripleDES::setKey()
-     * @see Crypt_TripleDES::setIV()
+     * @see setKey()
+     * @see setIV()
      * @var Boolean
      * @access private
      */
-    var $enchanged = true;
-
-    /**
-     * Does the demcrypt resource need to be (re)initialized?
-     *
-     * @see Crypt_TripleDES::setKey()
-     * @see Crypt_TripleDES::setIV()
-     * @var Boolean
-     * @access private
-     */
-    var $dechanged = true;
-
-    /**
-     * Is the mode one that is paddable?
-     *
-     * @see Crypt_TripleDES::Crypt_TripleDES()
-     * @var Boolean
-     * @access private
-     */
-    var $paddable = false;
-
-    /**
-     * Encryption buffer for CTR, OFB and CFB modes
-     *
-     * @see Crypt_TripleDES::encrypt()
-     * @var String
-     * @access private
-     */
-    var $enbuffer = '';
-
-    /**
-     * Decryption buffer for CTR, OFB and CFB modes
-     *
-     * @see Crypt_TripleDES::decrypt()
-     * @var String
-     * @access private
-     */
-    var $debuffer = '';
-
-    /**
-     * mcrypt resource for CFB mode
-     *
-     * @see Crypt_TripleDES::encrypt()
-     * @see Crypt_TripleDES::decrypt()
-     * @var String
-     * @access private
-     */
-    var $ecb;
+    var $changed = true;
 
     /**
      * Default Constructor.
@@ -276,21 +231,13 @@ class Crypt_TripleDES {
             case CRYPT_DES_MODE_MCRYPT:
                 switch ($mode) {
                     case CRYPT_DES_MODE_ECB:
-                        $this->paddable = true;
                         $this->mode = MCRYPT_MODE_ECB;
                         break;
                     case CRYPT_DES_MODE_CTR:
                         $this->mode = 'ctr';
                         break;
-                    case CRYPT_DES_MODE_CFB:
-                        $this->mode = 'ncfb';
-                        break;
-                    case CRYPT_DES_MODE_OFB:
-                        $this->mode = MCRYPT_MODE_NOFB;
-                        break;
                     case CRYPT_DES_MODE_CBC:
                     default:
-                        $this->paddable = true;
                         $this->mode = MCRYPT_MODE_CBC;
                 }
 
@@ -309,17 +256,11 @@ class Crypt_TripleDES {
 
                 switch ($mode) {
                     case CRYPT_DES_MODE_ECB:
-                    case CRYPT_DES_MODE_CBC:
-                        $this->paddable = true;
-                        $this->mode = $mode;
-                        break;
                     case CRYPT_DES_MODE_CTR:
-                    case CRYPT_DES_MODE_CFB:
-                    case CRYPT_DES_MODE_OFB:
+                    case CRYPT_DES_MODE_CBC:
                         $this->mode = $mode;
                         break;
                     default:
-                        $this->paddable = true;
                         $this->mode = CRYPT_DES_MODE_CBC;
                 }
         }
@@ -346,8 +287,6 @@ class Crypt_TripleDES {
             // if $key is between 64 and 128-bits, use the first 64-bits as the last, per this:
             // http://php.net/function.mcrypt-encrypt#47973
             //$key = $length <= 16 ? substr_replace($key, substr($key, 0, 8), 16) : substr($key, 0, 24);
-        } else {
-            $key = str_pad($key, 8, chr(0));
         }
         $this->key = $key;
         switch (true) {
@@ -357,7 +296,7 @@ class Crypt_TripleDES {
                 $this->des[1]->setKey(substr($key,  8, 8));
                 $this->des[2]->setKey(substr($key, 16, 8));
         }
-        $this->enchanged = $this->dechanged = true;
+        $this->changed = true;
     }
 
     /**
@@ -377,7 +316,7 @@ class Crypt_TripleDES {
             $this->des[1]->setIV($iv);
             $this->des[2]->setIV($iv);
         }
-        $this->enchanged = $this->dechanged = true;
+        $this->changed = true;
     }
 
     /**
@@ -386,9 +325,9 @@ class Crypt_TripleDES {
      * Encrypt the output of this and XOR it against the ciphertext / plaintext to get the
      * plaintext / ciphertext in CTR mode.
      *
-     * @see Crypt_TripleDES::decrypt()
-     * @see Crypt_TripleDES::encrypt()
-     * @access private
+     * @see Crypt_DES::decrypt()
+     * @see Crypt_DES::encrypt()
+     * @access public
      * @param Integer $length
      * @param String $iv
      */
@@ -426,7 +365,7 @@ class Crypt_TripleDES {
      */
     function encrypt($plaintext)
     {
-        if ($this->paddable) {
+        if ($this->mode != CRYPT_DES_MODE_CTR && $this->mode != 'ctr') {
             $plaintext = $this->_pad($plaintext);
         }
 
@@ -438,50 +377,15 @@ class Crypt_TripleDES {
         }
 
         if ( CRYPT_DES_MODE == CRYPT_DES_MODE_MCRYPT ) {
-            if ($this->enchanged) {
+            if ($this->changed) {
                 if (!isset($this->enmcrypt)) {
                     $this->enmcrypt = mcrypt_module_open(MCRYPT_3DES, '', $this->mode, '');
                 }
                 mcrypt_generic_init($this->enmcrypt, $this->key, $this->encryptIV);
-                if ($this->mode != 'ncfb') {
-                    $this->enchanged = false;
-                }
+                $this->changed = false;
             }
 
-            if ($this->mode != 'ncfb') {
-                $ciphertext = mcrypt_generic($this->enmcrypt, $plaintext);
-            } else {
-                if ($this->enchanged) {
-                    $this->ecb = mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_ECB, '');
-                    mcrypt_generic_init($this->ecb, $this->key, "\0\0\0\0\0\0\0\0");
-                    $this->enchanged = false;
-                }
-
-                if (strlen($this->enbuffer)) {
-                    $ciphertext = $plaintext ^ substr($this->encryptIV, strlen($this->enbuffer));
-                    $this->enbuffer.= $ciphertext;
-                    if (strlen($this->enbuffer) == 8) {
-                        $this->encryptIV = $this->enbuffer;
-                        $this->enbuffer = '';
-                        mcrypt_generic_init($this->enmcrypt, $this->key, $this->encryptIV);
-                    }
-                    $plaintext = substr($plaintext, strlen($ciphertext));
-                } else {
-                    $ciphertext = '';
-                }
-
-                $last_pos = strlen($plaintext) & 0xFFFFFFF8;
-                $ciphertext.= $last_pos ? mcrypt_generic($this->enmcrypt, substr($plaintext, 0, $last_pos)) : '';
-
-                if (strlen($plaintext) & 0x7) {
-                    if (strlen($ciphertext)) {
-                        $this->encryptIV = substr($ciphertext, -8);
-                    }
-                    $this->encryptIV = mcrypt_generic($this->ecb, $this->encryptIV);
-                    $this->enbuffer = substr($plaintext, $last_pos) ^ $this->encryptIV;
-                    $ciphertext.= $this->enbuffer;
-                }
-            }
+            $ciphertext = mcrypt_generic($this->enmcrypt, $plaintext);
 
             if (!$this->continuousBuffer) {
                 mcrypt_generic_init($this->enmcrypt, $this->key, $this->encryptIV);
@@ -496,21 +400,17 @@ class Crypt_TripleDES {
             return $this->des[0]->encrypt($plaintext);
         }
 
+        // we pad with chr(0) since that's what mcrypt_generic does.  to quote from http://php.net/function.mcrypt-generic :
+        // "The data is padded with "\0" to make sure the length of the data is n * blocksize."
+        $plaintext = str_pad($plaintext, ceil(strlen($plaintext) / 8) * 8, chr(0));
+
         $des = $this->des;
 
-        $buffer = &$this->enbuffer;
-        $continuousBuffer = $this->continuousBuffer;
         $ciphertext = '';
         switch ($this->mode) {
             case CRYPT_DES_MODE_ECB:
                 for ($i = 0; $i < strlen($plaintext); $i+=8) {
                     $block = substr($plaintext, $i, 8);
-                    // all of these _processBlock calls could, in theory, be put in a function - say Crypt_TripleDES::_ede_encrypt() or something.
-                    // only problem with that: it would slow encryption and decryption down.  $this->des would have to be called every time that
-                    // function is called, instead of once for the whole string of text that's being encrypted, which would, in turn, make
-                    // encryption and decryption take more time, per this:
-                    //
-                    // http://blog.libssh2.org/index.php?/archives/21-Compiled-Variables.html
                     $block = $des[0]->_processBlock($block, CRYPT_DES_ENCRYPT);
                     $block = $des[1]->_processBlock($block, CRYPT_DES_DECRYPT);
                     $block = $des[2]->_processBlock($block, CRYPT_DES_ENCRYPT);
@@ -533,92 +433,16 @@ class Crypt_TripleDES {
                 break;
             case CRYPT_DES_MODE_CTR:
                 $xor = $this->encryptIV;
-                if (strlen($buffer)) {
-                    for ($i = 0; $i < strlen($plaintext); $i+=8) {
-                        $block = substr($plaintext, $i, 8);
-                        $key = $this->_generate_xor(8, $xor);
-                        $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
-                        $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $buffer.= $key;
-                        $key = $this->_string_shift($buffer, 8);
-                        $ciphertext.= $block ^ $key;
-                    }
-                } else {
-                    for ($i = 0; $i < strlen($plaintext); $i+=8) {
-                        $block = substr($plaintext, $i, 8);
-                        $key = $this->_generate_xor(8, $xor);
-                        $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
-                        $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $ciphertext.= $block ^ $key;
-                    }
-                }
-                if ($this->continuousBuffer) {
-                    $this->encryptIV = $xor;
-                    if ($start = strlen($plaintext) & 7) {
-                        $buffer = substr($key, $start) . $buffer;
-                    }
-                }
-                break;
-            case CRYPT_DES_MODE_CFB:
-                if (!empty($buffer['xor'])) {
-                    $ciphertext = $plaintext ^ $buffer['xor'];
-                    $iv = $buffer['encrypted'] . $ciphertext;
-                    $start = strlen($ciphertext);
-                    $buffer['encrypted'].= $ciphertext;
-                    $buffer['xor'] = substr($buffer['xor'], strlen($ciphertext));
-                } else {
-                    $ciphertext = '';
-                    $iv = $this->encryptIV;
-                    $start = 0;
-                }
-
-                for ($i = $start; $i < strlen($plaintext); $i+=8) {
+                for ($i = 0; $i < strlen($plaintext); $i+=8) {
+                    $key = $this->_generate_xor(8, $xor);
+                    $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
+                    $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
+                    $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
                     $block = substr($plaintext, $i, 8);
-                    $iv = $des[0]->_processBlock($iv, CRYPT_DES_ENCRYPT);
-                    $iv = $des[1]->_processBlock($iv, CRYPT_DES_DECRYPT);
-                    $xor= $des[2]->_processBlock($iv, CRYPT_DES_ENCRYPT);
-
-                    $iv = $block ^ $xor;
-                    if ($continuousBuffer && strlen($iv) != 8) {
-                        $buffer = array(
-                            'encrypted' => $iv,
-                            'xor' => substr($xor, strlen($iv))
-                        );
-                    }
-                    $ciphertext.= $iv;
-                }
-
-                if ($this->continuousBuffer) {
-                    $this->encryptIV = $iv;
-                }
-                break;
-            case CRYPT_DES_MODE_OFB:
-                $xor = $this->encryptIV;
-                if (strlen($buffer)) {
-                    for ($i = 0; $i < strlen($plaintext); $i+=8) {
-                        $xor = $des[0]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $buffer.= $xor;
-                        $key = $this->_string_shift($buffer, 8);
-                        $ciphertext.= substr($plaintext, $i, 8) ^ $key;
-                    }
-                } else {
-                    for ($i = 0; $i < strlen($plaintext); $i+=8) {
-                        $xor = $des[0]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $ciphertext.= substr($plaintext, $i, 8) ^ $xor;
-                    }
-                    $key = $xor;
+                    $ciphertext.= $block ^ $key;
                 }
                 if ($this->continuousBuffer) {
                     $this->encryptIV = $xor;
-                    if ($start = strlen($plaintext) & 7) {
-                         $buffer = substr($key, $start) . $buffer;
-                    }
                 }
         }
 
@@ -639,78 +463,36 @@ class Crypt_TripleDES {
             return $this->_unpad($plaintext);
         }
 
-        if ($this->paddable) {
-            // we pad with chr(0) since that's what mcrypt_generic does.  to quote from http://php.net/function.mcrypt-generic :
-            // "The data is padded with "\0" to make sure the length of the data is n * blocksize."
-            $ciphertext = str_pad($ciphertext, (strlen($ciphertext) + 7) & 0xFFFFFFF8, chr(0));
-        }
+        // we pad with chr(0) since that's what mcrypt_generic does.  to quote from http://php.net/function.mcrypt-generic :
+        // "The data is padded with "\0" to make sure the length of the data is n * blocksize."
+        $ciphertext = str_pad($ciphertext, (strlen($ciphertext) + 7) & 0xFFFFFFF8, chr(0));
 
         if ( CRYPT_DES_MODE == CRYPT_DES_MODE_MCRYPT ) {
-            if ($this->dechanged) {
+            if ($this->changed) {
                 if (!isset($this->demcrypt)) {
                     $this->demcrypt = mcrypt_module_open(MCRYPT_3DES, '', $this->mode, '');
                 }
                 mcrypt_generic_init($this->demcrypt, $this->key, $this->decryptIV);
-                if ($this->mode != 'ncfb') {
-                    $this->dechanged = false;
-                }
+                $this->changed = false;
             }
 
-            if ($this->mode != 'ncfb') {
-                $plaintext = mdecrypt_generic($this->demcrypt, $ciphertext);
-            } else {
-                if ($this->dechanged) {
-                    $this->ecb = mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_ECB, '');
-                    mcrypt_generic_init($this->ecb, $this->key, "\0\0\0\0\0\0\0\0");
-                    $this->dechanged = false;
-                }
-
-                if (strlen($this->debuffer)) {
-                    $plaintext = $ciphertext ^ substr($this->decryptIV, strlen($this->debuffer));
-
-                    $this->debuffer.= substr($ciphertext, 0, strlen($plaintext));
-                    if (strlen($this->debuffer) == 8) {
-                        $this->decryptIV = $this->debuffer;
-                        $this->debuffer = '';
-                        mcrypt_generic_init($this->demcrypt, $this->key, $this->decryptIV);
-                    }
-                    $ciphertext = substr($ciphertext, strlen($plaintext));
-                } else {
-                    $plaintext = '';
-                }
-
-                $last_pos = strlen($ciphertext) & 0xFFFFFFF8;
-                $plaintext.= $last_pos ? mdecrypt_generic($this->demcrypt, substr($ciphertext, 0, $last_pos)) : '';
-
-                if (strlen($ciphertext) & 0x7) {
-                    if (strlen($plaintext)) {
-                        $this->decryptIV = substr($ciphertext, $last_pos - 8, 8);
-                    }
-                    $this->decryptIV = mcrypt_generic($this->ecb, $this->decryptIV);
-                    $this->debuffer = substr($ciphertext, $last_pos);
-                    $plaintext.= $this->debuffer ^ $this->decryptIV;
-                }
-
-                return $plaintext;
-            }
+            $plaintext = mdecrypt_generic($this->demcrypt, $ciphertext);
 
             if (!$this->continuousBuffer) {
                 mcrypt_generic_init($this->demcrypt, $this->key, $this->decryptIV);
             }
 
-            return $this->paddable ? $this->_unpad($plaintext) : $plaintext;
+            return $this->mode != 'ctr' ? $this->_unpad($plaintext) : $plaintext;
         }
 
         if (strlen($this->key) <= 8) {
             $this->des[0]->mode = $this->mode;
-            $plaintext = $this->des[0]->decrypt($ciphertext);
-            return $this->paddable ? $this->_unpad($plaintext) : $plaintext;
+
+            return $this->_unpad($this->des[0]->decrypt($plaintext));
         }
 
         $des = $this->des;
 
-        $buffer = &$this->enbuffer;
-        $continuousBuffer = $this->continuousBuffer;
         $plaintext = '';
         switch ($this->mode) {
             case CRYPT_DES_MODE_ECB:
@@ -738,99 +520,20 @@ class Crypt_TripleDES {
                 break;
             case CRYPT_DES_MODE_CTR:
                 $xor = $this->decryptIV;
-                if (strlen($buffer)) {
-                    for ($i = 0; $i < strlen($ciphertext); $i+=8) {
-                        $block = substr($ciphertext, $i, 8);
-                        $key = $this->_generate_xor(8, $xor);
-                        $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
-                        $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $buffer.= $key;
-                        $key = $this->_string_shift($buffer, 8);
-                        $plaintext.= $block ^ $key;
-                    }
-                } else {
-                    for ($i = 0; $i < strlen($ciphertext); $i+=8) {
-                        $block = substr($ciphertext, $i, 8);
-                        $key = $this->_generate_xor(8, $xor);
-                        $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
-                        $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
-                        $plaintext.= $block ^ $key;
-                    }
-                }
-                if ($this->continuousBuffer) {
-                    $this->decryptIV = $xor;
-                    if ($start = strlen($plaintext) & 7) {
-                        $buffer = substr($key, $start) . $buffer;
-                    }
-                }
-                break;
-            case CRYPT_DES_MODE_CFB:
-                if (!empty($buffer['ciphertext'])) {
-                    $plaintext = $ciphertext ^ substr($this->decryptIV, strlen($buffer['ciphertext']));
-                    $buffer['ciphertext'].= substr($ciphertext, 0, strlen($plaintext));
-                    if (strlen($buffer['ciphertext']) == 8) {
-                        $xor = $des[0]->_processBlock($buffer['ciphertext'], CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $buffer['ciphertext'] = '';
-                    }
-                    $start = strlen($plaintext);
-                    $block = $this->decryptIV;
-                } else {
-                    $plaintext = '';
-                    $xor = $des[0]->_processBlock($this->decryptIV, CRYPT_DES_ENCRYPT);
-                    $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                    $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                    $start = 0;
-                }
-
-                for ($i = $start; $i < strlen($ciphertext); $i+=8) {
+                for ($i = 0; $i < strlen($ciphertext); $i+=8) {
+                    $key = $this->_generate_xor(8, $xor);
+                    $key = $des[0]->_processBlock($key, CRYPT_DES_ENCRYPT);
+                    $key = $des[1]->_processBlock($key, CRYPT_DES_DECRYPT);
+                    $key = $des[2]->_processBlock($key, CRYPT_DES_ENCRYPT);
                     $block = substr($ciphertext, $i, 8);
-                    $plaintext.= $block ^ $xor;
-                    if ($continuousBuffer && strlen($block) != 8) {
-                        $buffer['ciphertext'].= $block;
-                        $block = $xor;
-                    } else if (strlen($block) == 8) {
-                        $xor = $des[0]->_processBlock($block, CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                    }
-                }
-                if ($this->continuousBuffer) {
-                    $this->decryptIV = $block;
-                }
-                break;
-            case CRYPT_DES_MODE_OFB:
-                $xor = $this->decryptIV;
-                if (strlen($buffer)) {
-                    for ($i = 0; $i < strlen($ciphertext); $i+=8) {
-                        $xor = $des[0]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $buffer.= $xor;
-                        $key = $this->_string_shift($buffer, 8);
-                        $plaintext.= substr($ciphertext, $i, 8) ^ $key;
-                    }
-                } else {
-                    for ($i = 0; $i < strlen($ciphertext); $i+=8) {
-                        $xor = $des[0]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $xor = $des[1]->_processBlock($xor, CRYPT_DES_DECRYPT);
-                        $xor = $des[2]->_processBlock($xor, CRYPT_DES_ENCRYPT);
-                        $plaintext.= substr($ciphertext, $i, 8) ^ $xor;
-                    }
-                    $key = $xor;
+                    $plaintext.= $block ^ $key;
                 }
                 if ($this->continuousBuffer) {
                     $this->decryptIV = $xor;
-                    if ($start = strlen($ciphertext) & 7) {
-                         $buffer = substr($key, $start) . $buffer;
-                    }
                 }
         }
 
-        return $this->paddable ? $this->_unpad($plaintext) : $plaintext;
+        return $this->mode != CRYPT_DES_MODE_CTR ? $this->_unpad($plaintext) : $plaintext;
     }
 
     /**
@@ -982,23 +685,6 @@ class Crypt_TripleDES {
         }
 
         return substr($text, 0, -$length);
-    }
-
-    /**
-     * String Shift
-     *
-     * Inspired by array_shift
-     *
-     * @param String $string
-     * @param optional Integer $index
-     * @return String
-     * @access private
-     */
-    function _string_shift(&$string, $index = 1)
-    {
-        $substr = substr($string, 0, $index);
-        $string = substr($string, $index);
-        return $substr;
     }
 }
 

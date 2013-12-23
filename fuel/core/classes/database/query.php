@@ -2,7 +2,7 @@
 /**
  * Database query wrapper.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -13,55 +13,30 @@ namespace Fuel\Core;
 
 
 
-class Database_Query
-{
+class Database_Query {
 
-	/**
-	 * @var  int  Query type
-	 */
+	// Query type
 	protected $_type;
 
-	/**
-	 * @var  int  Cache lifetime
-	 */
+	// Cache lifetime
 	protected $_lifetime;
 
-	/**
-	 * @var  string  Cache key
-	 */
-	protected $_cache_key = null;
-
-	/**
-	 * @var  boolean  Cache all results
-	 */
-	protected $_cache_all = true;
-
-	/**
-	 * @var  string  SQL statement
-	 */
+	// SQL statement
 	protected $_sql;
 
-	/**
-	 * @var  array  Quoted query parameters
-	 */
+	// Quoted query parameters
 	protected $_parameters = array();
 
-	/**
-	 * @var  bool  Return results as associative arrays or objects
-	 */
-	protected $_as_object = false;
-
-	/**
-	 * @var  Database_Connection  Connection to use when compiling the SQL
-	 */
-	protected $_connection = null;
+	// Return results as associative arrays or objects
+	protected $_as_object = FALSE;
 
 	/**
 	 * Creates a new SQL query of the specified type.
 	 *
-	 * @param string $sql   query string
-	 * @param integer $type query type: DB::SELECT, DB::INSERT, etc
-	*/
+	 * @param   integer  query type: DB::SELECT, DB::INSERT, etc
+	 * @param   string   query string
+	 * @return  void
+	 */
 	public function __construct($sql, $type = null)
 	{
 		$this->_type = $type;
@@ -78,9 +53,9 @@ class Database_Query
 		try
 		{
 			// Return the SQL string
-			return $this->compile();
+			return $this->compile(\Database_Connection::instance());
 		}
-		catch (\Exception $e)
+		catch (Exception $e)
 		{
 			return $e->getMessage();
 		}
@@ -99,17 +74,12 @@ class Database_Query
 	/**
 	 * Enables the query to be cached for a specified amount of time.
 	 *
-	 * @param   integer $lifetime  number of seconds to cache or null for default
-	 * @param   string  $cache_key name of the cache key to be used or null for default
-	 * @param   boolean $cache_all if true, cache all results, even empty ones
-	 *
+	 * @param   integer  number of seconds to cache or null for default
 	 * @return  $this
 	 */
-	public function cached($lifetime = null, $cache_key = null, $cache_all = true)
+	public function cached($lifetime = NULL)
 	{
 		$this->_lifetime = $lifetime;
-		$this->_cache_all = (bool) $cache_all;
-		is_string($cache_key) and $this->_cache_key = $cache_key;
 
 		return $this;
 	}
@@ -121,7 +91,7 @@ class Database_Query
 	 */
 	public function as_assoc()
 	{
-		$this->_as_object = false;
+		$this->_as_object = FALSE;
 
 		return $this;
 	}
@@ -129,11 +99,10 @@ class Database_Query
 	/**
 	 * Returns results as objects
 	 *
-	 * @param   string $class classname or true for stdClass
-	 *
+	 * @param   string  classname or TRUE for stdClass
 	 * @return  $this
 	 */
-	public function as_object($class = true)
+	public function as_object($class = TRUE)
 	{
 		$this->_as_object = $class;
 
@@ -143,9 +112,8 @@ class Database_Query
 	/**
 	 * Set the value of a parameter in the query.
 	 *
-	 * @param   string $param parameter key to replace
-	 * @param   mixed  $value value to use
-	 *
+	 * @param   string   parameter key to replace
+	 * @param   mixed    value to use
 	 * @return  $this
 	 */
 	public function param($param, $value)
@@ -159,10 +127,9 @@ class Database_Query
 	/**
 	 * Bind a variable to a parameter in the query.
 	 *
-	 * @param  string $param parameter key to replace
-	 * @param  mixed  $var   variable to use
-	 *
-	 * @return $this
+	 * @param   string  parameter key to replace
+	 * @param   mixed   variable to use
+	 * @return  $this
 	 */
 	public function bind($param, & $var)
 	{
@@ -175,8 +142,7 @@ class Database_Query
 	/**
 	 * Add multiple parameters to the query.
 	 *
-	 * @param array $params list of parameters
-	 *
+	 * @param   array  list of parameters
 	 * @return  $this
 	 */
 	public function parameters(array $params)
@@ -188,40 +154,14 @@ class Database_Query
 	}
 
 	/**
-	 * Set a DB connection to use when compiling the SQL
-	 *
-	 * @param  mixed  $db
-	 *
-	 * @return  $this
-	 */
-	public function set_connection($db)
-	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = \Database_Connection::instance($db);
-		}
-		$this->_connection = $db;
-
-		return $this;
-	}
-
-	/**
 	 * Compile the SQL query and return it. Replaces any parameters with their
 	 * given values.
 	 *
-	 * @param   mixed $db Database instance or instance name
-	 *
+	 * @param   object  Database instance
 	 * @return  string
 	 */
-	public function compile($db = null)
+	public function compile(\Database_Connection$db)
 	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = $this->_connection ?: \Database_Connection::instance($db);
-		}
-
 		// Import the SQL locally
 		$sql = $this->_sql;
 
@@ -231,34 +171,45 @@ class Database_Query
 			$values = array_map(array($db, 'quote'), $this->_parameters);
 
 			// Replace the values in the SQL
-			$sql = \Str::tr($sql, $values);
+			$sql = strtr($sql, $values);
 		}
 
-		return trim($sql);
+		return $sql;
 	}
 
 	/**
 	 * Execute the current query on the given database.
 	 *
-	 * @param   mixed   $db Database instance or name of instance
-	 *
+	 * @param   mixed    Database instance or name of instance
 	 * @return  object   Database_Result for SELECT queries
 	 * @return  mixed    the insert id for INSERT queries
 	 * @return  integer  number of affected rows for all other queries
 	 */
-	public function execute($db = null)
+	public function execute($db = NULL)
 	{
 		if ( ! is_object($db))
 		{
-			// Get the database instance. If this query is a instance of
-			// Database_Query_Builder_Select then use the slave connection if configured
-			$db = \Database_Connection::instance($db, null, ! $this instanceof \Database_Query_Builder_Select);
+			// Get the database instance
+			$db = \Database_Connection::instance($db);
 		}
 
 		// Compile the SQL query
 		$sql = $this->compile($db);
 
-		switch(strtoupper(substr(ltrim($sql,'('), 0, 6)))
+/*		if ( ! empty($this->_lifetime) AND $this->_type === DB::SELECT)
+		{
+			// Set the cache key based on the database instance name and SQL
+			$cache_key = 'Database_Connection::query("'.$db.'", "'.$sql.'")';
+
+			if ($result = Kohana::cache($cache_key, NULL, $this->_lifetime))
+			{
+				// Return a cached result
+				return new Database_Result_Cached($result, $sql, $this->_as_object);
+			}
+		}
+*/
+
+		switch(strtoupper(substr($sql, 0, 6)))
 		{
 			case 'SELECT':
 				$this->_type = \DB::SELECT;
@@ -269,30 +220,17 @@ class Database_Query
 				break;
 		}
 
-		if ($db->caching() and ! empty($this->_lifetime) and $this->_type === DB::SELECT)
-		{
-			$cache_key = empty($this->_cache_key) ?
-				'db.'.md5('Database_Connection::query("'.$db.'", "'.$sql.'")') : $this->_cache_key;
-			$cache = \Cache::forge($cache_key);
-			try
-			{
-				$result = $cache->get();
-				return new Database_Result_Cached($result, $sql, $this->_as_object);
-			}
-			catch (CacheNotFoundException $e) {}
-		}
-
-		// Execute the query
 		\DB::$query_count++;
+		// Execute the query
 		$result = $db->query($this->_type, $sql, $this->_as_object);
 
-		// Cache the result if needed
-		if (isset($cache) and ($this->_cache_all or $result->count()))
+/*		if (isset($cache_key))
 		{
-			$cache->set_expiration($this->_lifetime)->set_contents($result->as_array())->set();
+			// Cache the result array
+			Kohana::cache($cache_key, $result->as_array(), $this->_lifetime);
 		}
-
+*/
 		return $result;
 	}
 
-}
+} // End Database_Query

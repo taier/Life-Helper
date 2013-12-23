@@ -1,12 +1,14 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -15,35 +17,40 @@ namespace Fuel\Core;
 /**
  * Cookie class
  *
- * @package    Fuel
+ * @package    Kohana
  * @category   Helpers
  * @author     Kohana Team
- * @modified   Fuel Development Team
+ * @modified   Phil Sturgeon - Fuel Development Team
  * @copyright  (c) 2008-2010 Kohana Team
  * @license    http://kohanaframework.org/license
- * @link       http://docs.fuelphp.com/classes/cookie.html
+ * @link		http://fuelphp.com/docs/classes/cookie.html
  */
-class Cookie
-{
+class Cookie {
 
 	/**
-	 * @var  array  Cookie class configuration defaults
+	 * @var  integer  Number of seconds before the cookie expires
 	 */
-	private static $config = array(
-		'expiration'            => 0,
-		'path'                  => '/',
-		'domain'                => null,
-		'secure'                => false,
-		'http_only'             => false,
-	);
+	public static $expiration = 0;
 
-	/*
-	 * initialisation and auto configuration
+	/**
+	 * @var  string  Restrict the path that the cookie is available to
 	 */
-	public static function _init()
-	{
-		static::$config = array_merge(static::$config, \Config::get('cookie', array()));
-	}
+	public static $path = '/';
+
+	/**
+	 * @var  string  Restrict the domain that the cookie is available to
+	 */
+	public static $domain = null;
+
+	/**
+	 * @var  boolean  Only transmit cookies over secure connections
+	 */
+	public static $secure = false;
+
+	/**
+	 * @var  boolean  Only transmit cookies over HTTP, disabling Javascript access
+	 */
+	public static $http_only = false;
 
 	/**
 	 * Gets the value of a signed cookie. Cookies without signatures will not
@@ -57,7 +64,7 @@ class Cookie
 	 * @param   mixed   default value to return
 	 * @return  string
 	 */
-	public static function get($name = null, $default = null)
+	public static function get($name, $default = null)
 	{
 		return \Input::cookie($name, $default);
 	}
@@ -69,36 +76,38 @@ class Cookie
 	 *     // Set the "theme" cookie
 	 *     Cookie::set('theme', 'red');
 	 *
-	 * @param   string    name of cookie
-	 * @param   string    value of cookie
-	 * @param   integer   lifetime in seconds
-	 * @param   string    path of the cookie
-	 * @param   string    domain of the cookie
-	 * @param   boolean   if true, the cookie should only be transmitted over a secure HTTPS connection
-	 * @param   boolean   if true, the cookie will be made accessible only through the HTTP protocol
+	 * @param   string   name of cookie
+	 * @param   string   value of cookie
+	 * @param   integer  lifetime in seconds
+	 * @param   string   path of the cookie
+	 * @param   string   domain of the cookie
 	 * @return  boolean
 	 */
-	public static function set($name, $value, $expiration = null, $path = null, $domain = null, $secure = null, $http_only = null)
+	public static function set($name, $value, $expiration = null, $path = null, $domain = null)
 	{
-		// you can't set cookies in CLi mode
-		if (\Fuel::$is_cli)
+		// If nothing is provided, use the standard amount of time
+		if ($expiration === null)
 		{
-			return false;
+			$expiration = time() + 86500;
+		}
+		// If it's set, add the current time so we have an offset
+		else
+		{
+			$expiration = $expiration > 0 ? $expiration + time() : 0;
 		}
 
-		$value = \Fuel::value($value);
+		// use the class defaults for path and domain if not provided
+		if (empty($path))
+		{
+			$path = static::$path;
+		}
 
-		// use the class defaults for the other parameters if not provided
-		is_null($expiration) and $expiration = static::$config['expiration'];
-		is_null($path) and $path = static::$config['path'];
-		is_null($domain) and $domain = static::$config['domain'];
-		is_null($secure) and $secure = static::$config['secure'];
-		is_null($http_only) and $http_only = static::$config['http_only'];
+		if (empty($domain))
+		{
+			$domain = static::$domain;
+		}
 
-		// add the current time so we have an offset
-		$expiration = $expiration > 0 ? $expiration + time() : 0;
-
-		return setcookie($name, $value, $expiration, $path, $domain, $secure, $http_only);
+		return setcookie($name, $value, $expiration, $path, $domain, static::$secure, static::$http_only);
 	}
 
 	/**
@@ -107,21 +116,17 @@ class Cookie
 	 *     Cookie::delete('theme');
 	 *
 	 * @param   string   cookie name
- 	 * @param   string    path of the cookie
-	 * @param   string    domain of the cookie
-	 * @param   boolean   if true, the cookie should only be transmitted over a secure HTTPS connection
-	 * @param   boolean   if true, the cookie will be made accessible only through the HTTP protocol
 	 * @return  boolean
 	 * @uses    static::set
 	 */
-	public static function delete($name, $path = null, $domain = null, $secure = null, $http_only = null)
+	public static function delete($name)
 	{
 		// Remove the cookie
 		unset($_COOKIE[$name]);
 
 		// Nullify the cookie and make it expire
-		return static::set($name, null, -86400, $path, $domain, $secure, $http_only);
+		return static::set($name, null, -86400);
 	}
 }
 
-
+/* End of file cookie.php */

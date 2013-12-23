@@ -2,7 +2,7 @@
 /**
  * Database exceptions.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Exceptions
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
@@ -11,4 +11,4 @@
 
 namespace Fuel\Core;
 
-class Database_Exception extends \FuelException {}
+class Database_Exception extends \Fuel_Exception {}

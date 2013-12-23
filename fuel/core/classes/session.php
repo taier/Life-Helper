@@ -1,12 +1,14 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -18,10 +20,9 @@ namespace Fuel\Core;
  * @package		Fuel
  * @category	Core
  * @author		Harro "WanWizard" Verton
- * @link		http://docs.fuelphp.com/classes/session.html
+ * @link		http://fuelphp.com/docs/classes/session.html
  */
-class Session
-{
+class Session {
 	/**
 	 * loaded session driver instance
 	 */
@@ -36,20 +37,17 @@ class Session
 	 * array of global config defaults
 	 */
 	protected static $_defaults = array(
-		'driver'                    => 'cookie',
-		'match_ip'                  => false,
-		'match_ua'                  => true,
-		'cookie_domain'             => '',
-		'cookie_path'               => '/',
-		'cookie_http_only'          => null,
-		'encrypt_cookie'            => true,
-		'expire_on_close'           => false,
-		'expiration_time'           => 7200,
-		'rotation_time'             => 300,
-		'flash_id'                  => 'flash',
-		'flash_auto_expire'         => true,
-		'flash_expire_after_get'    => true,
-		'post_cookie_name'          => ''
+		'driver'			=> 'cookie',
+		'match_ip'			=> false,
+		'match_ua'			=> true,
+		'cookie_domain' 	=> '',
+		'cookie_path'		=> '/',
+		'expire_on_close'	=> false,
+		'expiration_time'	=> 7200,
+		'rotation_time'		=> 300,
+		'flash_id'			=> 'flash',
+		'flash_auto_expire'	=> true,
+		'post_cookie_name'	=> ''
 	);
 
 	// --------------------------------------------------------------------
@@ -63,7 +61,15 @@ class Session
 
 		if (\Config::get('session.auto_initialize', true))
 		{
-			static::instance();
+			// need to catch errors here, the error handler isn't running yet
+			try
+			{
+				static::instance();
+			}
+			catch (Exception $e)
+			{
+				\Error::show_php_error($e);die();
+			}
 		}
 	}
 
@@ -76,12 +82,12 @@ class Session
 	 *
 	 * @param	array|string	full driver config or just driver type
 	 */
-	public static function forge($custom = array())
+	public static function factory($custom = array())
 	{
 		$config = \Config::get('session', array());
 
 		// When a string was passed it's just the driver type
-		if ( ! empty($custom) and ! is_array($custom))
+		if ( ! empty($custom) && ! is_array($custom))
 		{
 			$custom = array('driver' => $custom);
 		}
@@ -108,13 +114,13 @@ class Session
 			$class_instance = 'Fuel\\Core\\'.$class;
 			if (static::$_instances[$cookie] instanceof $class_instance)
 			{
-				throw new \FuelException('You can not instantiate two different sessions using the same cookie name "'.$cookie.'"');
+				throw new \Fuel_Exception('You can not instantiate two different sessions using the same cookie name "'.$cookie.'"');
 			}
 		}
 		else
 		{
 			// register a shutdown event to update the session
-			\Event::register('fuel-shutdown', array($driver, 'write'));
+			\Event::register('shutdown', array($driver, 'write'));
 
 			// init the session
 			$driver->init();
@@ -161,7 +167,7 @@ class Session
 
 		if (static::$_instance === null)
 		{
-			static::$_instance = static::forge();
+			static::$_instance = static::factory();
 		}
 
 		return static::$_instance;
@@ -172,8 +178,8 @@ class Session
 	/**
 	 * set session variables
 	 *
-	 * @param	string|array	name of the variable to set or array of values, array(name => value)
-	 * @param	mixed			value
+	 * @param	string	name of the variable to set
+	 * @param	mixed	value
 	 * @access	public
 	 * @return	void
 	 */
@@ -249,12 +255,11 @@ class Session
 	 * @access	public
 	 * @param	string	name of the variable to get
 	 * @param	mixed	default value to return if the variable does not exist
-	 * @param	bool	true if the flash variable needs to expire immediately
 	 * @return	mixed
 	 */
-	public static function get_flash($name = null, $default = null, $expire = null)
+	public static function get_flash($name = null, $default = null)
 	{
-		return static::instance()->get_flash($name, $default, $expire);
+		return static::instance()->get_flash($name, $default);
 	}
 
 	// --------------------------------------------------------------------
@@ -328,19 +333,6 @@ class Session
 	// --------------------------------------------------------------------
 
 	/**
-	 * rotate the session id
-	 *
-	 * @access	public
-	 * @return	void
-	 */
-	public static function rotate()
-	{
-		return static::instance()->rotate();
-	}
-
-	// --------------------------------------------------------------------
-
-	/**
 	 * destroy the current session
 	 *
 	 * @access	public
@@ -353,4 +345,4 @@ class Session
 
 }
 
-
+/* End of file session.php */

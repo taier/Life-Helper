@@ -4,7 +4,7 @@
  * by a name. Queries are typically handled by [Database_Query], rather than
  * using the database object directly.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2008-2010 Kohana Team
@@ -15,12 +15,12 @@ namespace Fuel\Core;
 
 
 
-abstract class Database_Connection
-{
+abstract class Database_Connection {
+
 	/**
-	 * @var string Cache of the name of the readonly connection
+	 * @var  string  default instance name
 	 */
-	protected static $_readonly = array();
+	public static $default = 'default';
 
 	/**
 	 * @var  array  Database instances
@@ -38,32 +38,22 @@ abstract class Database_Connection
 	 *     // Create a custom configured instance
 	 *     $db = static::instance('custom', $config);
 	 *
-	 * @param   string $name     instance name
-	 * @param   array  $config   configuration parameters
-	 * @param   bool   $writable when replication is enabled, whether to return the master connection
-	 *
-	 * @return  Database_Connection
-	 *
-	 * @throws \FuelException
+	 * @param   string   instance name
+	 * @param   array    configuration parameters
+	 * @return  Database
 	 */
-	public static function instance($name = null, array $config = null, $writable = true)
+	public static function instance($name = NULL, array $config = NULL)
 	{
 		\Config::load('db', true);
-		if ($name === null)
+		if ($name === NULL)
 		{
 			// Use the default instance name
 			$name = \Config::get('db.active');
 		}
 
-		if ( ! $writable and ($readonly = \Config::get("db.{$name}.readonly", false)))
-		{
-			! isset(static::$_readonly[$name]) and static::$_readonly[$name] = \Arr::get($readonly, array_rand($readonly));
-			$name = static::$_readonly[$name];
-		}
-
 		if ( ! isset(static::$instances[$name]))
 		{
-			if ($config === null)
+			if ($config === NULL)
 			{
 				// Load the configuration for this database
 				$config = \Config::get("db.{$name}");
@@ -71,11 +61,11 @@ abstract class Database_Connection
 
 			if ( ! isset($config['type']))
 			{
-				throw new \FuelException('Database type not defined in "{$name}" configuration or "{$name}" configuration does not exist');
+				throw new \Fuel_Exception("Database type not defined in {$name} configuration");
 			}
 
 			// Set the driver class name
-			$driver = '\\Database_' . ucfirst($config['type']) . '_Connection';
+			$driver = 'Fuel\\Core\\Database_'.ucfirst($config['type']).'_Connection';
 
 			// Create the database connection instance
 			new $driver($name, $config);
@@ -89,24 +79,16 @@ abstract class Database_Connection
 	 */
 	public $last_query;
 
-	/**
-	 * @var  string  Character that is used to quote identifiers
-	 */
+	// Character that is used to quote identifiers
 	protected $_identifier = '"';
 
-	/**
-	 * @var  string  Instance name
-	 */
+	// Instance name
 	protected $_instance;
 
-	/**
-	 * @var  resource  Raw server connection
-	 */
+	// Raw server connection
 	protected $_connection;
 
-	/**
-	 * @var  array  Configuration array
-	 */
+	// Configuration array
 	protected $_config;
 
 	/**
@@ -114,8 +96,7 @@ abstract class Database_Connection
 	 *
 	 * [!!] This method cannot be accessed directly, you must use [static::instance].
 	 *
-	 * @param string $name
-	 * @param array  $config
+	 * @return  void
 	 */
 	protected function __construct($name, array $config)
 	{
@@ -183,7 +164,7 @@ abstract class Database_Connection
 	 *     $db->set_charset('utf8');
 	 *
 	 * @throws  Database_Exception
-	 * @param   string $charset character set name
+	 * @param   string   character set name
 	 * @return  void
 	 */
 	abstract public function set_charset($charset);
@@ -192,15 +173,14 @@ abstract class Database_Connection
 	 * Perform an SQL query of the given type.
 	 *
 	 *     // Make a SELECT query and use objects for results
-	 *     $db->query(static::SELECT, 'SELECT * FROM groups', true);
+	 *     $db->query(static::SELECT, 'SELECT * FROM groups', TRUE);
 	 *
 	 *     // Make a SELECT query and use "Model_User" for the results
 	 *     $db->query(static::SELECT, 'SELECT * FROM users LIMIT 1', 'Model_User');
 	 *
-	 * @param   integer $type      static::SELECT, static::INSERT, etc
-	 * @param   string  $sql       SQL query
-	 * @param   mixed   $as_object result object class, true for stdClass, false for assoc array
-	 *
+	 * @param   integer  static::SELECT, static::INSERT, etc
+	 * @param   string   SQL query
+	 * @param   mixed    result object class, TRUE for stdClass, FALSE for assoc array
 	 * @return  object   Database_Result for SELECT queries
 	 * @return  array    list (insert id, row count) for INSERT queries
 	 * @return  integer  number of affected rows for all other queries
@@ -222,16 +202,16 @@ abstract class Database_Connection
 			$sql = trim($sql);
 			if (stripos($sql, 'SELECT') !== 0)
 			{
-				return false;
+				return FALSE;
 			}
 
-			if (stripos($sql, 'LIMIT') !== false)
+			if (stripos($sql, 'LIMIT') !== FALSE)
 			{
 				// Remove LIMIT from the SQL
 				$sql = preg_replace('/\sLIMIT\s+[^a-z]+/i', ' ', $sql);
 			}
 
-			if (stripos($sql, 'OFFSET') !== false)
+			if (stripos($sql, 'OFFSET') !== FALSE)
 			{
 				// Remove OFFSET from the SQL
 				$sql = preg_replace('/\sOFFSET\s+\d+/i', '', $sql);
@@ -243,31 +223,14 @@ abstract class Database_Connection
 				\DB::SELECT,
 				'SELECT COUNT(*) AS '.$this->quote_identifier('total_rows').' '.
 				'FROM ('.$sql.') AS '.$this->quote_table('counted_results'),
-				true
+				TRUE
 			);
 
 			// Return the total number of rows from the query
 			return (int) $result->current()->total_rows;
 		}
 
-		return false;
-	}
-
-	/**
-	 * Per connection cache controlle setter/getter
-	 *
-	 * @param   bool   $bool  wether to enable it [optional]
-	 *
-	 * @return  mixed  cache boolean when getting, current instance when setting.
-	 */
-	public function caching($bool = null)
-	{
-		if (is_bool($bool))
-		{
-			$this->_config['enable_cache'] = $bool;
-			return $this;
-		}
-		return \Arr::get($this->_config, 'enable_cache', true);
+		return FALSE;
 	}
 
 	/**
@@ -276,16 +239,15 @@ abstract class Database_Connection
 	 *     // Get the total number of records in the "users" table
 	 *     $count = $db->count_records('users');
 	 *
-	 * @param   mixed $table table name string or array(query, alias)
-	 *
+	 * @param   mixed    table name string or array(query, alias)
 	 * @return  integer
 	 */
 	public function count_records($table)
 	{
 		// Quote the table name
-		$table = $this->quote_table($table);
+		$table = $this->quote_identifier($table);
 
-		return $this->query(\DB::SELECT, 'SELECT COUNT(*) AS total_row_count FROM '.$table, false)
+		return $this->query(\DB::SELECT, 'SELECT COUNT(*) AS total_row_count FROM '.$table, FALSE)
 			->get('total_row_count');
 	}
 
@@ -294,8 +256,7 @@ abstract class Database_Connection
 	 *
 	 *     $db->datatype('char');
 	 *
-	 * @param   string $type SQL data type
-	 *
+	 * @param   string  SQL data type
 	 * @return  array
 	 */
 	public function datatype($type)
@@ -303,27 +264,27 @@ abstract class Database_Connection
 		static $types = array
 		(
 			// SQL-92
-			'bit'                           => array('type' => 'string', 'exact' => true),
+			'bit'                           => array('type' => 'string', 'exact' => TRUE),
 			'bit varying'                   => array('type' => 'string'),
-			'char'                          => array('type' => 'string', 'exact' => true),
+			'char'                          => array('type' => 'string', 'exact' => TRUE),
 			'char varying'                  => array('type' => 'string'),
-			'character'                     => array('type' => 'string', 'exact' => true),
+			'character'                     => array('type' => 'string', 'exact' => TRUE),
 			'character varying'             => array('type' => 'string'),
 			'date'                          => array('type' => 'string'),
-			'dec'                           => array('type' => 'float', 'exact' => true),
-			'decimal'                       => array('type' => 'float', 'exact' => true),
+			'dec'                           => array('type' => 'float', 'exact' => TRUE),
+			'decimal'                       => array('type' => 'float', 'exact' => TRUE),
 			'double precision'              => array('type' => 'float'),
 			'float'                         => array('type' => 'float'),
 			'int'                           => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
 			'integer'                       => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
 			'interval'                      => array('type' => 'string'),
-			'national char'                 => array('type' => 'string', 'exact' => true),
+			'national char'                 => array('type' => 'string', 'exact' => TRUE),
 			'national char varying'         => array('type' => 'string'),
-			'national character'            => array('type' => 'string', 'exact' => true),
+			'national character'            => array('type' => 'string', 'exact' => TRUE),
 			'national character varying'    => array('type' => 'string'),
-			'nchar'                         => array('type' => 'string', 'exact' => true),
+			'nchar'                         => array('type' => 'string', 'exact' => TRUE),
 			'nchar varying'                 => array('type' => 'string'),
-			'numeric'                       => array('type' => 'float', 'exact' => true),
+			'numeric'                       => array('type' => 'float', 'exact' => TRUE),
 			'real'                          => array('type' => 'float'),
 			'smallint'                      => array('type' => 'int', 'min' => '-32768', 'max' => '32767'),
 			'time'                          => array('type' => 'string'),
@@ -333,8 +294,8 @@ abstract class Database_Connection
 			'varchar'                       => array('type' => 'string'),
 
 			// SQL:1999
-			'binary large object'               => array('type' => 'string', 'binary' => true),
-			'blob'                              => array('type' => 'string', 'binary' => true),
+			'binary large object'               => array('type' => 'string', 'binary' => TRUE),
+			'blob'                              => array('type' => 'string', 'binary' => TRUE),
 			'boolean'                           => array('type' => 'bool'),
 			'char large object'                 => array('type' => 'string'),
 			'character large object'            => array('type' => 'string'),
@@ -349,9 +310,9 @@ abstract class Database_Connection
 			'bigint'    => array('type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'),
 
 			// SQL:2008
-			'binary'            => array('type' => 'string', 'binary' => true, 'exact' => true),
-			'binary varying'    => array('type' => 'string', 'binary' => true),
-			'varbinary'         => array('type' => 'string', 'binary' => true),
+			'binary'            => array('type' => 'string', 'binary' => TRUE, 'exact' => TRUE),
+			'binary varying'    => array('type' => 'string', 'binary' => TRUE),
+			'varbinary'         => array('type' => 'string', 'binary' => TRUE),
 		);
 
 		if (isset($types[$type]))
@@ -370,11 +331,10 @@ abstract class Database_Connection
 	 *     // Get all user-related tables
 	 *     $tables = $db->list_tables('user%');
 	 *
-	 * @param   string $like table to search for
-	 *
+	 * @param   string   table to search for
 	 * @return  array
 	 */
-	abstract public function list_tables($like = null);
+	abstract public function list_tables($like = NULL);
 
 	/**
 	 * Lists all of the columns in a table. Optionally, a LIKE string can be
@@ -386,12 +346,11 @@ abstract class Database_Connection
 	 *     // Get all name-related columns
 	 *     $columns = $db->list_columns('users', '%name%');
 	 *
-	 * @param   string $table table to get columns from
-	 * @param   string $like  column to search for
-	 *
+	 * @param   string  table to get columns from
+	 * @param   string  column to search for
 	 * @return  array
 	 */
-	abstract public function list_columns($table, $like = null);
+	abstract public function list_columns($table, $like = NULL);
 
 	/**
 	 * Extracts the text between parentheses, if any.
@@ -399,16 +358,15 @@ abstract class Database_Connection
 	 *     // Returns: array('CHAR', '6')
 	 *     list($type, $length) = $db->_parse_type('CHAR(6)');
 	 *
-	 * @param string $type
-	 *
+	 * @param   string
 	 * @return  array   list containing the type and length, if any
 	 */
 	protected function _parse_type($type)
 	{
-		if (($open = strpos($type, '(')) === false)
+		if (($open = strpos($type, '(')) === FALSE)
 		{
 			// No length specified
-			return array($type, null);
+			return array($type, NULL);
 		}
 
 		// Closing parenthesis
@@ -428,8 +386,6 @@ abstract class Database_Connection
 	 *
 	 *     $prefix = $db->table_prefix();
 	 *
-	 * @param string $table
-	 *
 	 * @return  string
 	 */
 	public function table_prefix($table = null)
@@ -445,7 +401,7 @@ abstract class Database_Connection
 	/**
 	 * Quote a value for an SQL query.
 	 *
-	 *     $db->quote(null);   // 'null'
+	 *     $db->quote(NULL);   // 'NULL'
 	 *     $db->quote(10);     // 10
 	 *     $db->quote('fred'); // 'fred'
 	 *
@@ -454,23 +410,21 @@ abstract class Database_Connection
 	 * [Database_Query] objects will be compiled and converted to a sub-query.
 	 * All other objects will be converted using the `__toString` method.
 	 *
-	 * @param   mixed $value any value to quote
-	 *
+	 * @param   mixed   any value to quote
 	 * @return  string
-	 *
 	 * @uses    static::escape
 	 */
 	public function quote($value)
 	{
-		if ($value === null)
+		if ($value === NULL)
 		{
-			return 'null';
+			return 'NULL';
 		}
-		elseif ($value === true)
+		elseif ($value === TRUE)
 		{
 			return "'1'";
 		}
-		elseif ($value === false)
+		elseif ($value === FALSE)
 		{
 			return "'0'";
 		}
@@ -514,10 +468,8 @@ abstract class Database_Connection
 	 *
 	 *     $table = $db->quote_table($table);
 	 *
-	 * @param   mixed $value table name or array(table, alias)
-	 *
+	 * @param   mixed   table name or array(table, alias)
 	 * @return  string
-	 *
 	 * @uses    static::quote_identifier
 	 * @uses    static::table_prefix
 	 */
@@ -536,59 +488,13 @@ abstract class Database_Connection
 			$table =& $value;
 		}
 
-		// deal with the sub-query objects first
-		if ($table instanceof Database_Query)
+		if (is_string($table) AND strpos($table, '.') === FALSE)
 		{
-			// Create a sub-query
-			$table = '('.$table->compile($this).')';
-		}
-		elseif (is_string($table))
-		{
-			if (strpos($table, '.') === false)
-			{
-				// Add the table prefix for tables
-				$table = $this->quote_identifier($this->table_prefix().$table);
-			}
-			else
-			{
-				// Split the identifier into the individual parts
-				$parts = explode('.', $table);
-
-				if ($prefix = $this->table_prefix())
-				{
-					// Get the offset of the table name, 2nd-to-last part
-					// This works for databases that can have 3 identifiers (Postgre)
-					if (($offset = count($parts)) == 2)
-					{
-						$offset = 1;
-					}
-					else
-					{
-						$offset = $offset - 2;
-					}
-
-					// Add the table prefix to the table name
-					$parts[$offset] = $prefix.$parts[$offset];
-				}
-
-				// Quote each of the parts
-				$table = implode('.', array_map(array($this, 'quote_identifier'), $parts));
-			}
+			// Add the table prefix for tables
+			$table = $this->table_prefix().$table;
 		}
 
-		// process the alias if present
-		if (is_array($value))
-		{
-			// Separate the column and alias
-			list ($value, $alias) = $value;
-
-			return $value.' AS '.$this->quote_identifier($alias);
-		}
-		else
-		{
-			// return the value
-			return $value;
-		}
+		return $this->quote_identifier($value);
 	}
 
 	/**
@@ -607,10 +513,8 @@ abstract class Database_Connection
 	 * [Database_Query] objects will be compiled and converted to a sub-query.
 	 * All other objects will be converted using the `__toString` method.
 	 *
-	 * @param   mixed $value any identifier
-	 *
+	 * @param   mixed   any identifier
 	 * @return  string
-	 *
 	 * @uses    static::table_prefix
 	 */
 	public function quote_identifier($value)
@@ -645,19 +549,12 @@ abstract class Database_Connection
 			return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
 		}
 
-		if (strpos($value, '"') !== false)
+		if (strpos($value, '"') !== FALSE)
 		{
-			// required for PHP 5.5- (no access to $this in closure)
-			$that = $this;
 			// Quote the column in FUNC("ident") identifiers
-			return preg_replace_callback('/"(.+?)"/', function ($matches) use($that) { return $that->quote_identifier($matches[1]); }, $value);
+			return preg_replace('/"(.+?)"/e', '$this->quote_identifier("$1")', $value);
 		}
-		elseif (preg_match("/^'(.*)?'$/", $value))
-		{
-			// return quoted values as-is
-			return $value;
-		}
-		elseif (strpos($value, '.') !== false)
+		elseif (strpos($value, '.') !== FALSE)
 		{
 			// Split the identifier into the individual parts
 			$parts = explode('.', $value);
@@ -687,27 +584,30 @@ abstract class Database_Connection
 	 *
 	 *     $value = $db->escape('any string');
 	 *
-	 * @param   string $value value to quote
-	 *
+	 * @param   string   value to quote
 	 * @return  string
 	 */
 	abstract public function escape($value);
 
 	/**
-	 * Whether or not the connection is in transaction mode
+	 * Sets the Database instance to use transactions
+	 * Transactions are OFF by default
 	 *
-	 *     $db->in_transaction();
+	 *     $db->transactional();
+	 *     $db->transactional(TRUE);
+	 *     $db->transactional(FALSE);
 	 *
-	 * @return  bool
+	 * @param   bool   use tranactions TRUE/FALSE
+	 * @return  void
 	 */
-	abstract public function in_transaction();
+	abstract public function transactional($use_trans = TRUE);
 
 	/**
 	 * Begins a transaction on instance
 	 *
 	 *     $db->start_transaction();
 	 *
-	 * @return  bool
+	 * @return  void
 	 */
 	abstract public function start_transaction();
 
@@ -716,7 +616,7 @@ abstract class Database_Connection
 	 *
 	 *     $db->commit_transaction();
 	 *
-	 * @return  bool
+	 * @return  void
 	 */
 	abstract public function commit_transaction();
 
@@ -725,34 +625,8 @@ abstract class Database_Connection
 	 *
 	 *     $db->rollback_transaction();
 	 *
-	 * @return  bool
+	 * @return  void
 	 */
 	abstract public function rollback_transaction();
 
-	/**
-	 * Returns the raw connection object for custom method access
-	 *
-	 *     $db->connection()->lastInsertId('id');
-	 *
-	 * @return  resource
-	 */
-	public function connection()
-	{
-		// Make sure the database is connected
-		$this->_connection or $this->connect();
-		return $this->_connection;
-	}
-
-	/**
-	 * Returns whether or not we have a valid database connection object
-	 *
-	 *     $db->has_connection()
-	 *
-	 * @return  bool
-	 */
-	public function has_connection()
-	{
-		// return the status of the connection
-		return $this->_connection ? true : false;
-	}
-}
+} // End Database_Connection

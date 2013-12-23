@@ -5,44 +5,39 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
 namespace Auth;
 
 
-class Auth_Group_Simplegroup extends \Auth_Group_Driver
-{
+class Auth_Group_SimpleGroup extends \Auth_Group_Driver {
 
-	protected static $_valid_groups = array();
+	public static $_valid_groups = array();
 
 	public static function _init()
 	{
-		static::$_valid_groups = array_keys(\Config::get('simpleauth.groups', array()));
+		static::$_valid_groups = array_keys(\Config::get('simpleauth.groups'));
 	}
 
 	protected $config = array(
-		'drivers' => array('acl' => array('Simpleacl'))
+		'drivers' => array('acl' => array('SimpleAcl'))
 	);
-
-	public function groups()
-	{
-		return static::$_valid_groups;
-	}
 
 	public function member($group, $user = null)
 	{
 		if ($user === null)
 		{
-			$groups = \Auth::instance()->get_groups();
+			$groups = \Auth::instance()->get_user_groups();
 		}
 		else
 		{
-			$groups = \Auth::instance($user[0])->get_groups();
+			// to be written...
+			// $groups = \Auth::instance($user[0])->get_user_groups();
 		}
 
 		if ( ! $groups || ! in_array((int) $group, static::$_valid_groups))
@@ -53,36 +48,16 @@ class Auth_Group_Simplegroup extends \Auth_Group_Driver
 		return in_array(array($this->id, $group), $groups);
 	}
 
-	public function get_name($group = null)
+	public function get_name($group)
 	{
-		if ($group === null)
-		{
-			if ( ! $login = \Auth::instance() or ! is_array($groups = $login->get_groups()))
-			{
-				return false;
-			}
-			$group = isset($groups[0][1]) ? $groups[0][1] : null;
-		}
-
-		return \Config::get('simpleauth.groups.'.$group.'.name', null);
+		return @static::$_valid_groups[(int) $group]['name'] ?: false;
 	}
 
-	public function get_roles($group = null)
+	public function get_roles($group)
 	{
-		// When group is empty, attempt to get groups from a current login
-		if ($group === null)
+		if ( ! in_array((int) $group, static::$_valid_groups))
 		{
-			if ( ! $login = \Auth::instance()
-				or ! is_array($groups = $login->get_groups())
-				or ! isset($groups[0][1]))
-			{
-				return array();
-			}
-			$group = $groups[0][1];
-		}
-		elseif ( ! in_array((int) $group, static::$_valid_groups))
-		{
-			return array();
+			return false;
 		}
 
 		$groups = \Config::get('simpleauth.groups');

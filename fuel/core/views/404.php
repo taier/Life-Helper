@@ -1,3 +1,4 @@
+<?php  ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,7 +17,7 @@
 		background-color: #000;
 		-webkit-border-radius: 10px 10px 0 0;
 		-moz-border-radius: 10px 10px 0 0;
-		border-radius: 10px 10px 0 0;
+		border-radius: 10px 10px 0 0;		
 		border: 1px solid #000;
 	}
 	#header h1 {

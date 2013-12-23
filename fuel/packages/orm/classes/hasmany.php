@@ -4,96 +4,58 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.7
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Orm;
 
-class HasMany extends Relation
-{
+class HasMany extends Relation {
+
 	public function __construct($from, $name, array $config)
 	{
 		$this->name        = $name;
 		$this->model_from  = $from;
-		$this->model_to    = array_key_exists('model_to', $config)
-			? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
-		$this->key_from    = array_key_exists('key_from', $config)
-			? (array) $config['key_from'] : $this->key_from;
-		$this->key_to      = array_key_exists('key_to', $config)
-			? (array) $config['key_to'] : (array) \Inflector::foreign_key($this->model_from);
-		$this->conditions  = array_key_exists('conditions', $config)
-			? (array) $config['conditions'] : array();
+		$this->model_to    = array_key_exists('model_to', $config) ? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
+		$this->key_from    = array_key_exists('key_from', $config) ? (array) $config['key_from'] : $this->key_from;
+		$this->key_to      = array_key_exists('key_to', $config) ? (array) $config['key_to'] : (array) \Inflector::foreign_key($this->model_from);
 
-		$this->cascade_save    = array_key_exists('cascade_save', $config)
-			? $config['cascade_save'] : $this->cascade_save;
-		$this->cascade_delete  = array_key_exists('cascade_delete', $config)
-			? $config['cascade_delete'] : $this->cascade_delete;
+		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
+		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new \FuelException('Related model not found by Has_Many relation "'.$this->name.'": '.$this->model_to);
+			throw new Exception('Related model not found by Has_Many relation "'.$this->name.'": '.$this->model_to);
 		}
-		$this->model_to = get_real_class($this->model_to);
 	}
 
-	public function get(Model $from, array $conditions = array())
+	public function get(Model $from)
 	{
-		$query = call_user_func(array($this->model_to, 'query'));
+		$query = call_user_func(array($this->model_to, 'find'));
 		reset($this->key_to);
 		foreach ($this->key_from as $key)
 		{
-			// no point running a query when a key value is null
-			if ($from->{$key} === null)
-			{
-				return array();
-			}
 			$query->where(current($this->key_to), $from->{$key});
 			next($this->key_to);
 		}
-
-		$conditions = \Arr::merge($this->conditions, $conditions);
-
-		foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
-		{
-			is_array($condition) or $condition = array($key, '=', $condition);
-			$query->where($condition);
-		}
-
-		foreach (\Arr::get($conditions, 'order_by', array()) as $field => $direction)
-		{
-			if (is_numeric($field))
-			{
-				$query->order_by($direction);
-			}
-			else
-			{
-				$query->order_by($field, $direction);
-			}
-		}
-
 		return $query->get();
 	}
 
-	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
+	public function join($alias_from, $rel_name, $alias_to_nr)
 	{
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
-			'model'        => $this->model_to,
-			'connection'   => call_user_func(array($this->model_to, 'connection')),
-			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
-			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => \Arr::get($conditions, 'join_type') ?: \Arr::get($this->conditions, 'join_type', 'left'),
-			'join_on'      => array(),
-			'columns'      => $this->select($alias_to),
-			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
-			'relation'     => $this,
-			'where'        => \Arr::get($conditions, 'where', array()),
-			'order_by'     => \Arr::get($conditions, 'order_by') ?: \Arr::get($this->conditions, 'order_by', array()),
+			'model'      => $this->model_to,
+			'table'      => array(call_user_func(array($this->model_to, 'table')), $alias_to),
+			'join_type'  => 'left',
+			'join_on'    => array(),
+			'columns'    => $this->select($alias_to),
+			'rel_name'   => $rel_name,
+			'relation'   => $this
 		);
 
 		reset($this->key_to);
@@ -102,22 +64,8 @@ class HasMany extends Relation
 			$model['join_on'][] = array($alias_from.'.'.$key, '=', $alias_to.'.'.current($this->key_to));
 			next($this->key_to);
 		}
-		foreach (array(\Arr::get($this->conditions, 'where', array()), \Arr::get($conditions, 'join_on', array())) as $c)
-		{
-			foreach ($c as $key => $condition)
-			{
-				! is_array($condition) and $condition = array($key, '=', $condition);
-				if ( ! $condition[0] instanceof \Fuel\Core\Database_Expression and strpos($condition[0], '.') === false)
-				{
-					$condition[0] = $alias_to.'.'.$condition[0];
-				}
-				is_string($condition[2]) and $condition[2] = \Db::quote($condition[2], $model['connection']);
 
-				$model['join_on'][] = $condition;
-			}
-		}
-
-		return array($rel_name => $model);
+		return array($model);
 	}
 
 	public function save($model_from, $models_to, $original_model_ids, $parent_saved, $cascade)
@@ -129,7 +77,7 @@ class HasMany extends Relation
 
 		if ( ! is_array($models_to) and ($models_to = is_null($models_to) ? array() : $models_to) !== array())
 		{
-			throw new \FuelException('Assigned relationships must be an array or null, given relationship value for '.
+			throw new Exception('Assigned relationships must be an array or null, given relationship value for '.
 				$this->name.' is invalid.');
 		}
 		$original_model_ids === null and $original_model_ids = array();
@@ -138,13 +86,19 @@ class HasMany extends Relation
 		{
 			if ( ! $model_to instanceof $this->model_to)
 			{
-				throw new \FuelException('Invalid Model instance added to relations in this model.');
+				throw new Exception('Invalid Model instance added to relations in this model.');
 			}
 
-			$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
+			// Save if it's a yet unsaved object
+			if ($model_to->is_new())
+			{
+				$model_to->save(false);
+			}
+
+			$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
 
 			// Check if the model was already assigned
-			if (($model_to and $model_to->is_new()) or ! in_array($current_model_id, $original_model_ids))
+			if ( ! in_array($current_model_id, $original_model_ids))
 			{
 				// assign this object to the new objects foreign keys
 				reset($this->key_to);
@@ -155,7 +109,6 @@ class HasMany extends Relation
 					$model_to->{current($this->key_to)} = $model_from->{$pk};
 					next($this->key_to);
 				}
-				$model_to->is_new() and $model_to->save(false);
 				$frozen and $model_to->freeze();
 			}
 			// check if the model_to's foreign_keys match the model_from's primary keys
@@ -191,7 +144,7 @@ class HasMany extends Relation
 			}
 
 			// Fix it if key isn't an imploded PK
-			if ($key != ($current_model_id = $model_to->implode_pk($model_to)))
+			if ($key != $current_model_id)
 			{
 				$model_from->unfreeze();
 				$rel = $model_from->_relate();
@@ -249,25 +202,26 @@ class HasMany extends Relation
 		$model_from->_relate($rels);
 		$model_from->freeze();
 
-		if ( ! empty($models_to))
+		foreach ($models_to as $model_to)
 		{
-			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-
-			foreach ($models_to as $m)
+			if ( ! $model_to->frozen())
 			{
-				if ($cascade)
+				foreach ($this->key_to as $fk)
 				{
-					$m->delete();
+					$model_to->{$fk} = null;
 				}
-				elseif ( ! $m->frozen())
-				{
-					foreach ($this->key_to as $fk)
-					{
-						$m->{$fk} = null;
-					}
-					$m->is_changed() and $m->save();
-				}
+			}
+		}
+
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+		if ($cascade and ! empty($model_to))
+		{
+			foreach ($model_to as $m)
+			{
+				$m->delete();
 			}
 		}
 	}
 }
+
+/* End of file hasone.php */

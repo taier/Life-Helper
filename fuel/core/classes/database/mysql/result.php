@@ -2,7 +2,7 @@
 /**
  * MySQL database result.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query/Result
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,8 +11,7 @@
 
 namespace Fuel\Core;
 
-class Database_MySQL_Result extends \Database_Result
-{
+class Database_MySQL_Result extends \Database_Result {
 
 	protected $_internal_row = 0;
 
@@ -34,28 +33,28 @@ class Database_MySQL_Result extends \Database_Result
 
 	public function seek($offset)
 	{
-		if ($this->offsetExists($offset) and mysql_data_seek($this->_result, $offset))
+		if ($this->offsetExists($offset) AND mysql_data_seek($this->_result, $offset))
 		{
 			// Set the current row to the offset
 			$this->_current_row = $this->_internal_row = $offset;
 
-			return true;
+			return TRUE;
 		}
 		else
 		{
-			return false;
+			return FALSE;
 		}
 	}
 
 	public function current()
 	{
-		if ($this->_current_row !== $this->_internal_row and ! $this->seek($this->_current_row))
-			return false;
+		if ($this->_current_row !== $this->_internal_row AND ! $this->seek($this->_current_row))
+			return FALSE;
 
 		// Increment internal row for optimization assuming rows are fetched in order
 		$this->_internal_row++;
 
-		if ($this->_as_object === true)
+		if ($this->_as_object === TRUE)
 		{
 			// Return an stdClass
 			return mysql_fetch_object($this->_result);
@@ -71,4 +70,5 @@ class Database_MySQL_Result extends \Database_Result
 			return mysql_fetch_assoc($this->_result);
 		}
 	}
-}
+
+} // End Database_MySQL_Result_Select

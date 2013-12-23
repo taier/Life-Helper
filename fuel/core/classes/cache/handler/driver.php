@@ -1,12 +1,14 @@
 <?php
 /**
- * Part of the Fuel framework.
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.7
+ * @version    1.0
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2011 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -19,18 +21,20 @@ interface Cache_Handler_Driver {
 	/**
 	 * Should make the contents readable
 	 *
-	 * @param   mixed
-	 * @return  mixed
+	 * @access	public
+	 * @param	mixed
+	 * @return	mixed
 	 */
 	public function readable($contents);
 
 	/**
 	 * Should make the contents writable
 	 *
-	 * @param   mixed
-	 * @return  mixed
+	 * @access	public
+	 * @param	mixed
+	 * @return	mixed
 	 */
 	public function writable($contents);
 }
 
-
+/* End of file driver.php */

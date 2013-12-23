@@ -2,7 +2,7 @@
 /**
  * Database query builder for WHERE statements.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,52 +11,40 @@
 
 namespace Fuel\Core;
 
-abstract class Database_Query_Builder_Where extends \Database_Query_Builder
-{
-	/**
-	 * @var array  $_where  where statements
-	 */
+abstract class Database_Query_Builder_Where extends \Database_Query_Builder {
+
+	// WHERE ...
 	protected $_where = array();
 
-	/**
-	 * @var array  $_order_by  order by clause
-	 */
+	// ORDER BY ...
 	protected $_order_by = array();
 
-	/**
-	 * @var  integer  $_limit
-	 */
-	protected $_limit = null;
+	// LIMIT ...
+	protected $_limit = NULL;
 
 	/**
 	 * Alias of and_where()
 	 *
+	 * @param   mixed   column name or array($column, $alias) or object
+	 * @param   string  logic operator
+	 * @param   mixed   column value
 	 * @return  $this
 	 */
-	public function where()
+	public function where($column, $op = null, $value = null)
 	{
-		return call_fuel_func_array(array($this, 'and_where'), func_get_args());
+		return $this->and_where($column, $op, $value);
 	}
 
 	/**
 	 * Creates a new "AND WHERE" condition for the query.
 	 *
-	 * @param   mixed   $column  column name or array($column, $alias) or object
-	 * @param   string  $op      logic operator
-	 * @param   mixed   $value   column value
-	 *
+	 * @param   mixed   column name or array($column, $alias) or object
+	 * @param   string  logic operator
+	 * @param   mixed   column value
 	 * @return  $this
 	 */
 	public function and_where($column, $op = null, $value = null)
 	{
-		if($column instanceof \Closure)
-		{
-			$this->and_where_open();
-			$column($this);
-			$this->and_where_close();
-			return $this;
-		}
-
 		if (is_array($column))
 		{
 			foreach ($column as $key => $val)
@@ -73,11 +61,6 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 		}
 		else
 		{
-			if(func_num_args() === 2)
-			{
-				$value = $op;
-				$op = '=';
-			}
 			$this->_where[] = array('AND' => array($column, $op, $value));
 		}
 
@@ -87,22 +70,13 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	/**
 	 * Creates a new "OR WHERE" condition for the query.
 	 *
-	 * @param   mixed   $column  column name or array($column, $alias) or object
-	 * @param   string  $op      logic operator
-	 * @param   mixed   $value   column value
-	 *
+	 * @param   mixed   column name or array($column, $alias) or object
+	 * @param   string  logic operator
+	 * @param   mixed   column value
 	 * @return  $this
 	 */
 	public function or_where($column, $op = null, $value = null)
 	{
-		if($column instanceof \Closure)
-		{
-			$this->or_where_open();
-			$column($this);
-			$this->or_where_close();
-			return $this;
-		}
-
 		if (is_array($column))
 		{
 			foreach ($column as $key => $val)
@@ -119,11 +93,6 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 		}
 		else
 		{
-			if(func_num_args() === 2)
-			{
-				$value = $op;
-				$op = '=';
-			}
 			$this->_where[] = array('OR' => array($column, $op, $value));
 		}
 		return $this;
@@ -200,12 +169,11 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	/**
 	 * Applies sorting with "ORDER BY ..."
 	 *
-	 * @param   mixed   $column     column name or array($column, $alias) or object
-	 * @param   string  $direction  direction of sorting
-	 *
+	 * @param   mixed   column name or array($column, $alias) or object
+	 * @param   string  direction of sorting
 	 * @return  $this
 	 */
-	public function order_by($column, $direction = null)
+	public function order_by($column, $direction = NULL)
 	{
 		$this->_order_by[] = array($column, $direction);
 
@@ -215,8 +183,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	/**
 	 * Return up to "LIMIT ..." results
 	 *
-	 * @param   integer  $number  maximum results to return
-	 *
+	 * @param   integer  maximum results to return
 	 * @return  $this
 	 */
 	public function limit($number)
@@ -225,4 +192,5 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 
 		return $this;
 	}
-}
+
+} // End Database_Query_Builder_Where

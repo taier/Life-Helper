@@ -2,7 +2,7 @@
 /**
  * Database query builder for INSERT statements.
  *
- * @package    Fuel/Database
+ * @package    Kohana/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,30 +11,25 @@
 
 namespace Fuel\Core;
 
-class Database_Query_Builder_Insert extends \Database_Query_Builder
-{
-	/**
-	 * @var string  $_table  table
-	 */
+class Database_Query_Builder_Insert extends \Database_Query_Builder {
+
+	// INSERT INTO ...
 	protected $_table;
 
-	/**
-	 * @var array $_columns  columns
-	 */
+	// (...)
 	protected $_columns = array();
 
-	/**
-	 * @var array  $_values  values
-	 */
+	// VALUES (...)
 	protected $_values = array();
 
 	/**
 	 * Set the table and columns for an insert.
 	 *
-	 * @param   mixed $table   table name or array($table, $alias) or object
-	 * @param   array $columns column names
+	 * @param   mixed  table name or array($table, $alias) or object
+	 * @param   array  column names
+	 * @return  void
 	 */
-	public function __construct($table = null, array $columns = null)
+	public function __construct($table = NULL, array $columns = NULL)
 	{
 		if ($table)
 		{
@@ -55,7 +50,7 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 	/**
 	 * Sets the table to insert into.
 	 *
-	 * @param   mixed $table table name or array($table, $alias) or object
+	 * @param   mixed  table name or array($table, $alias) or object
 	 * @return  $this
 	 */
 	public function table($table)
@@ -68,27 +63,28 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 	/**
 	 * Set the columns that will be inserted.
 	 *
-	 * @param   array $columns column names
+	 * @param   array  column names
 	 * @return  $this
 	 */
 	public function columns(array $columns)
 	{
-		$this->_columns = array_merge($this->_columns, $columns);
+		$this->_columns = $columns;
 
 		return $this;
 	}
 
 	/**
-	 * Adds values. Multiple value sets can be added.
+	 * Adds or overwrites values. Multiple value sets can be added.
 	 *
+	 * @param   array   values list
+	 * @param   ...
 	 * @return  $this
-	 * @throws \FuelException
 	 */
 	public function values(array $values)
 	{
 		if ( ! is_array($this->_values))
 		{
-			throw new \FuelException('INSERT INTO ... SELECT statements cannot be combined with INSERT INTO ... VALUES');
+			throw new \Fuel_Exception('INSERT INTO ... SELECT statements cannot be combined with INSERT INTO ... VALUES');
 		}
 
 		// Get all of the passed values
@@ -102,8 +98,7 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 	/**
 	 * This is a wrapper function for calling columns() and values().
 	 *
-	 * @param array $pairs column value pairs
-	 *
+	 * @param	array	column value pairs
 	 * @return	$this
 	 */
 	public function set(array $pairs)
@@ -117,17 +112,14 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 	/**
 	 * Use a sub-query to for the inserted values.
 	 *
-	 * @param   Database_Query  $query  Database_Query of SELECT type
-	 *
+	 * @param   object  Database_Query of SELECT type
 	 * @return  $this
-	 *
-	 * @throws \FuelException
 	 */
 	public function select(Database_Query $query)
 	{
 		if ($query->type() !== \DB::SELECT)
 		{
-			throw new \FuelException('Only SELECT queries can be combined with INSERT queries');
+			throw new \Fuel_Exception('Only SELECT queries can be combined with INSERT queries');
 		}
 
 		$this->_values = $query;
@@ -138,18 +130,11 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 	/**
 	 * Compile the SQL query and return it.
 	 *
-	 * @param   mixed  $db  Database instance or instance name
-	 *
+	 * @param   object  Database instance
 	 * @return  string
 	 */
-	public function compile($db = null)
+	public function compile(\Database_Connection$db)
 	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = \Database_Connection::instance($db);
-		}
-
 		// Start an insertion query
 		$query = 'INSERT INTO '.$db->quote_table($this->_table);
 
@@ -188,18 +173,16 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder
 		return $query;
 	}
 
-	/**
-	 * Reset the query parameters
-	 *
-	 * @return $this
-	 */
 	public function reset()
 	{
-		$this->_table = null;
-		$this->_columns = array();
+		$this->_table = NULL;
+
+		$this->_columns =
 		$this->_values  = array();
+
 		$this->_parameters = array();
 
 		return $this;
 	}
-}
+
+} // End Database_Query_Builder_Insert

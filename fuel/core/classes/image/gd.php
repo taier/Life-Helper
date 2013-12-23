@@ -1,33 +1,36 @@
 <?php
+
 /**
- * Part of the Fuel framework.
+ * Fuel
  *
- * @package    Fuel
- * @version    1.7
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
+ *
+ * Image manipulation class.
+ *
+ * @package		Fuel
+ * @version		1.0
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
-class Image_Gd extends \Image_Driver
-{
+class Image_Gd extends Image_Driver {
 
-	protected $image_data = null;
+	private $image_data = null;
 	protected $accepted_extensions = array('png', 'gif', 'jpg', 'jpeg');
 	protected $gdresizefunc = "imagecopyresampled";
 
-	public function load($filename, $return_data = false, $force_extension = false)
+	public function load($filename, $return_data = false)
 	{
-		extract(parent::load($filename, $return_data, $force_extension));
+		extract(parent::load($filename, $return_data));
 		$return = false;
 		$image_extension == 'jpg' and $image_extension = 'jpeg';
 
-		if ( ! $return_data)
+		if (is_resource($this->image_data))
 		{
-			$this->image_data !== null and imagedestroy($this->image_data);
+			imagedestroy($this->image_data);
 			$this->image_data = null;
 		}
 
@@ -36,6 +39,7 @@ class Image_Gd extends \Image_Driver
 		{
 			// Create a new transparent image.
 			$sizes = $this->sizes($image_fullpath);
+			$this->debug("Loading <code>".$image_fullpath."</code> with size of ".$sizes->width."x".$sizes->height);
 			$tmpImage = call_user_func('imagecreatefrom'.$image_extension, $image_fullpath);
 			$image = $this->create_transparent_image($sizes->width, $sizes->height, $tmpImage);
 			if ( ! $return_data)
@@ -47,11 +51,10 @@ class Image_Gd extends \Image_Driver
 			{
 				$return = $image;
 			}
-			$this->debug('', "<strong>Loaded</strong> <code>".$image_fullpath."</code> with size of ".$sizes->width."x".$sizes->height);
 		}
 		else
 		{
-			throw new \RuntimeException("Function imagecreatefrom".$image_extension."() does not exist (Missing GD?)");
+			throw new \Fuel_Exception("Function imagecreatefrom".$image_extension."() does not exist (Missing GD?)");
 		}
 		return $return_data ? $return : $this;
 	}
@@ -68,12 +71,10 @@ class Image_Gd extends \Image_Driver
 		$this->image_data = $image;
 	}
 
-	protected function _resize($width, $height = null, $keepar = true, $pad = true)
+	protected function _resize($width, $height, $keepar, $pad)
 	{
 		extract(parent::_resize($width, $height, $keepar, $pad));
 		$sizes = $this->sizes();
-
-		$this->debug("Resizing image to $width, $height with" . ($keepar ? '' : 'out') . " keeping AR and with" . ($pad ? '' : 'out') . " padding.");
 
 		// Add the original image.
 		$image = $this->create_transparent_image($cwidth, $cheight);
@@ -85,17 +86,16 @@ class Image_Gd extends \Image_Driver
 	{
 		extract(parent::_rotate($degrees));
 		$degrees = 360 - $degrees;
-		$bgcolor = $this->config['bgcolor'] !== null ? $this->config['bgcolor'] : '#000';
-		$color = $this->create_color($this->image_data, $bgcolor, 100);
+		$color = $this->create_color($this->image_data, $this->config['bgcolor'], 1000);
 		$this->image_data = imagerotate($this->image_data, $degrees, $color, false);
 	}
 
-	protected function _watermark($filename, $position, $padding = 5)
+	protected function _watermark($filename, $x, $y)
 	{
-		$values = parent::_watermark($filename, $position, $padding);
+		$values = parent::_watermark($filename, $x, $y);
 		if ($values == false)
 		{
-			throw new \InvalidArgumentException("Watermark image not found or invalid filetype.");
+			throw new \Fuel_Exception("Watermark image not found or invalid filetype.");
 		}
 		else
 		{
@@ -135,52 +135,7 @@ class Image_Gd extends \Image_Driver
 		}
 	}
 
-	protected function _flip($mode)
-	{
-		$sizes	= (array)$this->sizes();
-		$source = array_merge($sizes, array('x' => 0, 'y' => 0));
-
-		switch ($mode)
-		{
-			case 'vertical':
-			$source['y'] = $sizes['height'] - 1;
-			$source['height'] = -$sizes['height'];
-			break;
-
-			case 'horizontal':
-			$source['x'] = $sizes['width'] - 1;
-			$source['width']	= -$sizes['width'];
-			break;
-
-			case 'both':
-			$source['y'] = $sizes['height'] - 1;
-			$source['x'] = $sizes['width'] - 1;
-			$source['height'] = -$sizes['height'];
-			$source['width']	= -$sizes['width'];
-			break;
-
-			default: return false;
-		}
-
-		$image = imagecreatetruecolor($sizes['width'], $sizes['height']);
-
-		imagecopyresampled(
-			$image,
-			$this->image_data,
-			0,
-			0,
-			$source['x'],
-			$source['y'],
-			$sizes['width'],
-			$sizes['height'],
-			$source['width'],
-			$source['height']
-		);
-
-		$this->image_data = $image;
-	}
-
-	protected function _border($size, $color = null)
+	protected function _border($size, $color)
 	{
 		extract(parent::_border($size, $color));
 		$sizes = $this->sizes();
@@ -269,39 +224,6 @@ class Image_Gd extends \Image_Driver
 		$br and $this->round_corner($this->image_data, $radius, $antialias, false, false);
 	}
 
-	protected function _grayscale()
-	{
-		$sizes = $this->sizes();
-
-		// Create the 256 color palette
-		$bwpalette = array();
-		for ($i = 0; $i < 256; $i++)
-		{
-			$bwpalette[$i] = imagecolorallocate($this->image_data, $i, $i, $i);
-		}
-
-		for ($x = 0; $x < $sizes->width; $x++)
-		{
-			for ($y = 0; $y < $sizes->height; $y++)
-			{
-				$color = imagecolorat($this->image_data, $x, $y);
-				$red   = ($color >> 16) & 0xFF;
-				$green = ($color >> 8) & 0xFF;
-				$blue  = $color & 0xFF;
-
-				// If its black or white, theres no use in setting the pixel
-				if (($red == 0 && $green == 0 && $blue == 0) || ($red == 255 && $green == 255 && $blue == 255))
-				{
-					continue;
-				}
-
-				// Now set the color
-				$shade = (($red*0.299)+($green*0.587)+($blue*0.114));
-				imagesetpixel($this->image_data, $x, $y, $bwpalette[$shade]);
-			}
-		}
-	}
-
 	public function sizes($filename = null)
 	{
 		if (empty($filename) && !empty($this->image_fullpath))
@@ -326,12 +248,11 @@ class Image_Gd extends \Image_Driver
 		return (object) array('width' => $width, 'height' => $height);
 	}
 
-	public function save($filename = null, $permissions = null)
+	public function save($filename, $permissions = null)
 	{
 		extract(parent::save($filename, $permissions));
 
 		$this->run_queue();
-		$this->add_background();
 
 		$vars = array(&$this->image_data, $filename);
 		$filetype = $this->image_extension;
@@ -345,12 +266,7 @@ class Image_Gd extends \Image_Driver
 			$vars[] = floor(($this->config['quality'] / 100) * 9);
 		}
 
-		call_fuel_func_array('image'.$filetype, $vars);
-		if ($this->config['persistence'] === false)
-		{
-			$this->reload();
-		}
-
+		call_user_func_array('image'.$filetype, $vars);
 		return $this;
 	}
 
@@ -374,51 +290,61 @@ class Image_Gd extends \Image_Driver
 			$vars[] = floor(($this->config['quality'] / 100) * 9);
 		}
 
-		call_fuel_func_array('image'.$filetype, $vars);
-
-		if ($this->config['persistence'] === false)
-		{
-			$this->reload();
-		}
-
+		call_user_func_array('image'.$filetype, $vars);
 		return $this;
 	}
 
 	/**
 	 * Creates a new color usable by GD.
 	 *
-	 * @param   resource  $image  The image to create the color from
-	 * @param   string    $hex    The hex code of the color
-	 * @param   integer   $alpha  The alpha of the color, 0 (trans) to 100 (opaque)
-	 * @return  integer   The color
+	 * @param  resource  $image  The image to create the color from
+	 * @param  string    $hex    The hex code of the color
+	 * @param  integer   $alpha  The alpha of the color, 0 (trans) to 100 (opaque)
+	 * @return integer   The color
 	 */
 	protected function create_color(&$image, $hex, $alpha)
 	{
-		extract($this->create_hex_color($hex));
-
-		// Handling alpha is different among drivers
 		if ($hex == null)
 		{
+			$red = 0;
+			$green = 0;
+			$blue = 0;
 			$alpha = 127;
 		}
 		else
 		{
+			// Check if theres a # in front
+			if (substr($hex, 0, 1) == '#')
+			{
+				$hex = substr($hex, 1);
+			}
+
+			// Break apart the hex
+			if (strlen($hex) == 6)
+			{
+				$red   = hexdec(substr($hex, 0, 2));
+				$green = hexdec(substr($hex, 2, 2));
+				$blue  = hexdec(substr($hex, 4, 2));
+			}
+			else
+			{
+				$red   = hexdec(substr($hex, 0, 1).substr($hex, 0, 1));
+				$green = hexdec(substr($hex, 1, 1).substr($hex, 1, 1));
+				$blue  = hexdec(substr($hex, 2, 1).substr($hex, 2, 1));
+			}
 			$alpha = 127 - floor($alpha * 1.27);
 		}
-
 		// Check if the transparency is allowed
 		return imagecolorallocatealpha($image, $red, $green, $blue, $alpha);
 	}
 
 	protected function add_background()
 	{
-		if ($this->config['bgcolor'] != null || ($this->new_extension == 'jpg' || $this->new_extension == 'jpeg'))
+		if ($this->config['bgcolor'] != null)
 		{
-			$bgcolor = $this->config['bgcolor'] == null ? '#000' : $this->config['bgcolor'];
-			$this->debug("Adding background color $bgcolor");
 			$sizes = $this->sizes();
 			$bgimg = $this->create_transparent_image($sizes->width, $sizes->height);
-			$color = $this->create_color($bgimg, $bgcolor, 100);
+			$color = $this->create_color($bgimg, $this->config['bgcolor'], 100);
 			imagefill($bgimg, 0, 0, $color);
 			$this->image_merge($bgimg, $this->image_data, 0, 0, 100);
 			$this->image_data = $bgimg;
@@ -433,21 +359,12 @@ class Image_Gd extends \Image_Driver
 	 * @param  resource  $resource  Optionally add an image to the new transparent image.
 	 * @return resource  Returns the image in resource form.
 	 */
-	protected function create_transparent_image($width, $height, $resource = null)
+	private function create_transparent_image($width, $height, $resource = null)
 	{
 		$image = imagecreatetruecolor($width, $height);
 		$color = $this->create_color($image, null, 0);
 		imagesavealpha($image, true);
-		if ($this->image_extension == 'gif' || $this->image_extension == 'png')
-		{
-			// Get the current transparent color if possible...
-			$transcolor = imagecolortransparent($image);
-			if ($transcolor > 0)
-			{
-				$color = $transcolor;
-			}
-			imagecolortransparent($image, $color);
-		}
+
 		// Set the blending mode to false, add the bgcolor, then switch it back.
 		imagealphablending($image, false);
 		imagefilledrectangle($image, 0, 0, $width, $height, $color);
@@ -469,7 +386,7 @@ class Image_Gd extends \Image_Driver
 	 * @param  boolean   $top
 	 * @param  boolean   $left
 	 */
-	protected function round_corner(&$image, $radius, $antialias, $top, $left)
+	private function round_corner(&$image, $radius, $antialias, $top, $left)
 	{
 		$this->debug("Rounding ".($top ? 'top' : 'bottom')." ".($left ? 'left' : 'right')." corner with a radius of ".$radius."px.");
 		$sX = $left ? -$radius : 0;
@@ -538,7 +455,7 @@ class Image_Gd extends \Image_Driver
 	 * @param  integer   $y          The position of the watermark on the Y-axis
 	 * @param  integer   $alpha      The transparency of the watermark, 0 (trans) to 100 (opaque)
 	 */
-	protected function image_merge(&$image, $watermark, $x, $y, $alpha)
+	private function image_merge(&$image, $watermark, $x, $y, $alpha)
 	{
 		$wsizes = $this->sizes($watermark);
 		$tmpimage = $this->create_transparent_image($wsizes->width, $wsizes->height);
@@ -548,4 +465,7 @@ class Image_Gd extends \Image_Driver
 		imagecopymerge($image, $tmpimage, $x, $y, 0, 0, $wsizes->width, $wsizes->height, $alpha);
 		imagealphablending($image, true);
 	}
+
 }
+
+// End of file gd.php
