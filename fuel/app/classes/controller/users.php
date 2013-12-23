@@ -22,7 +22,7 @@ class Controller_Users extends Controller_Common {
         $val->add_field('username', 'Your username', 'required|min_length[3]|max_length[20]');
         $val->add_field('password', 'Your password', 'required|min_length[3]|max_length[20]');
         $val->add_field('email', 'Email', 'required|valid_email');
-        if ( $val->run() )
+        if ($val->run())
         {
             $create_user = Auth::instance()->create_user(
                     $val->validated('username'),
@@ -45,16 +45,16 @@ class Controller_Users extends Controller_Common {
             if( $_POST )
             {
                 $data['username'] = $val->validated('username');
-                $data['login_error'] = 'All fields are required.';
+                $data['errors'] = 'All fields are required.';
             }
             else
             {
-                $data['login_error'] = false;
+                $data['errors'] = false;
             }
         }
-        $this->template->title = 'Sign Up';
-        $this->template->errors = @$data['login_error'];
-        $this->template->content = View::factory('users/signup');
+        $this->template->title = 'Life Helper';
+        $this->template->errors = @$data['errors'];
+        $this->template->content = View::factory('users/signup', $data);
     }
 	public function action_login()
     {
@@ -92,7 +92,7 @@ class Controller_Users extends Controller_Common {
                 $data['errors'] = false;
             }
         }
-        $this->template->title = 'Login';
+        $this->template->title = 'Life Helper';
         $this->template->logged_in = false;
         $this->template->errors = @$data['errors'];
         $this->template->content = View::factory('users/login', $data);

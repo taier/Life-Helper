@@ -25,17 +25,17 @@
 				<li><?php echo Html::anchor('users/login', 'Login'); ?></li>
 				<li><?php echo Html::anchor('users/signup', 'Sign Up'); ?></li>
 			<?php endif; ?>
+
 			</ul>
-<!-- 
 			<?php if (Session::get_flash('success')): ?>
 				<?php echo Session::get_flash('success'); ?>
 			<?php elseif (Session::get_flash('notice')): ?>
 				<?php echo Session::get_flash('notice'); ?>
 			<?php elseif (Session::get_flash('error')): ?>
 				<?php echo Session::get_flash('error'); ?>
-			<?php endif; ?> -->
+			<?php endif; ?>
 
-			<?php echo $content; ?>
+			<?php echo $content;?>
 
 		</div>
 	</div>
