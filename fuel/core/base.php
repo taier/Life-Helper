@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 /**
@@ -23,12 +23,12 @@ if ( ! function_exists('import'))
 {
 	function import($path, $folder = 'classes')
 	{
-		$path = str_replace('/', DIRECTORY_SEPARATOR, $path);
-		require_once COREPATH.$folder.DIRECTORY_SEPARATOR.$path.'.php';
+		$path = str_replace('/', DS, $path);
+		require_once COREPATH.$folder.DS.$path.'.php';
 
-		if (is_file(APPPATH.$folder.DIRECTORY_SEPARATOR.$path.'.php'))
+		if (is_file(APPPATH.$folder.DS.$path.'.php'))
 		{
-			require_once APPPATH.$folder.DIRECTORY_SEPARATOR.$path.'.php';
+			require_once APPPATH.$folder.DS.$path.'.php';
 		}
 	}
 }
@@ -74,12 +74,6 @@ if ( ! function_exists('array_to_attr'))
 
 		foreach ($attr as $property => $value)
 		{
-			// Ignore null values
-			if (is_null($value))
-			{
-				continue;
-			}
-
 			// If the key is numeric then it must be something like selected="selected"
 			if (is_numeric($property))
 			{
@@ -88,7 +82,7 @@ if ( ! function_exists('array_to_attr'))
 
 			if (in_array($property, array('value', 'alt', 'title')))
 			{
-				$value = htmlentities($value, ENT_QUOTES, \Fuel::$encoding);
+				$value = htmlentities($value, ENT_QUOTES, INTERNAL_ENC);
 			}
 			$attr_str .= $property.'="'.$value.'" ';
 		}
@@ -165,21 +159,6 @@ if ( ! function_exists('__'))
 		return \Lang::line($string, $params);
 	}
 }
-
-/**
- * Encodes the given string.  This is just a wrapper function for Security::htmlentities()
- *
- * @param	mixed	The string to encode
- * @return	string
- */
-if ( ! function_exists('e'))
-{
-	function e($string)
-	{
-		return Security::htmlentities($string);
-	}
-}
-
 
 if ( ! function_exists('fuel_shutdown_handler'))
 {

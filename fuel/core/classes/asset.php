@@ -4,12 +4,11 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Dan Horrigan <http://dhorrigan.com>
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
  */
 
 namespace Fuel\Core;
@@ -341,18 +340,16 @@ class Asset {
 	 *
 	 * @access	public
 	 * @param	string	The filename to locate
-	 * @param	string	The sub-folder to look in (optional)
+	 * @param	string	The sub-folder to look in
 	 * @return	mixed	Either the path to the file or false if not found
 	 */
-	public static function find_file($file, $folder = '')
+	public static function find_file($file, $folder)
 	{
 		foreach (static::$_asset_paths as $path)
 		{
-			empty($folder) or $folder = trim($folder, '/').'/';
-
-			if (is_file($path.$folder.ltrim($file, '/')))
+			if (is_file($path.$folder.$file))
 			{
-				return $path.$folder.ltrim($file, '/');
+				return $path.$folder.$file;
 			}
 		}
 

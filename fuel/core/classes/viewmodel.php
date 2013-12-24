@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -21,19 +21,24 @@ namespace Fuel\Core;
 /**
  * ViewModel
  *
- * @package	    Fuel
- * @subpackage  Core
- * @category    Core
- * @author      Jelmer Schreuder
+ * @package		Fuel
+ * @subpackage	Core
+ * @category	Core
+ * @author		Jelmer Schreuder
  */
 abstract class ViewModel {
 
 	/**
+	 * @var	bool	whether to filter the variables passed to the View
+	 */
+	static public $filter_output = true;
+
+	/**
 	 * Factory for fetching the ViewModel
 	 *
-	 * @param   string  ViewModel classname without View_ prefix or full classname
-	 * @param   string  Method to execute
-	 * @return  ViewModel
+	 * @param	string	ViewModel classname without View_ prefix or full classname
+	 * @param	string	Method to execute
+	 * @return
 	 */
 	public static function factory($viewmodel, $method = 'view')
 	{
@@ -51,19 +56,14 @@ abstract class ViewModel {
 	}
 
 	/**
-	 * @var  string  method to execute when rendering
+	 * @var string	method to execute when rendering
 	 */
 	protected $_method;
 
 	/**
-	 * @var  string|View  view name, after instantiation a View object
+	 * @var	string|View	view name, after instantiation a View object
 	 */
 	protected $_template;
-
-	/**
-	 * @var  bool  whether or not to use auto encoding
-	 */
-	protected $_auto_encode;
 
 	protected function __construct($method)
 	{
@@ -73,16 +73,15 @@ abstract class ViewModel {
 			$this->_template = strtolower(str_replace('_', '/', preg_replace('#^([a-z0-9_]*\\\\)?(View_)?#i', '', $class)));
 		}
 
-		$this->set_template();
+		$this->_template	= $this->set_template();
 		$this->_method		= $method;
-		$this->_auto_encode = \View::$auto_encode;
 
 		$this->before();
 
 		// Set this as the controller output if this is the first ViewModel loaded
-		if ( ! \Request::active()->controller_instance->response->body instanceof ViewModel)
+		if ( ! \Request::active()->controller_instance->output instanceof ViewModel)
 		{
-			\Request::active()->controller_instance->response->body = $this;
+			\Request::active()->controller_instance->output = $this;
 		}
 	}
 
@@ -93,23 +92,7 @@ abstract class ViewModel {
 	 */
 	protected function set_template()
 	{
-		$this->_template = \View::factory($this->_template);
-	}
-
-	/**
-	 * Change auto encoding setting
-	 *
-	 * @param   null|bool  change setting (bool) or get the current setting (null)
-	 * @return  void|bool  returns current setting or nothing when it is changed
-	 */
-	public function auto_encoding($setting = null)
-	{
-		if (is_null($setting))
-		{
-			return $this->_auto_encode;
-		}
-
-		$this->_auto_encode = (bool) $setting;
+		return \View::factory($this->_template);
 	}
 
 	/**
@@ -146,7 +129,7 @@ abstract class ViewModel {
 	 */
 	public function __set($name, $val)
 	{
-		\View::$auto_encode ? $this->set_safe($name, $val) : $this->set_raw($name, $val);
+		static::$filter_output ? $this->set_safe($name, $val) : $this->set_raw($name, $val);
 	}
 
 	/**
@@ -159,7 +142,12 @@ abstract class ViewModel {
 	 */
 	public function set_safe($name, $val)
 	{
-		$this->_template->set($name, $val, true);
+		if ( ! is_object($val) or ! ($val instanceof ViewModel or $val instanceof View or $val instanceof \Closure))
+		{
+			$val = \Security::clean(is_object($val) ? (string) $val : $val);
+		}
+
+		$this->_template->{$name} = $val;
 	}
 
 	/**
@@ -170,7 +158,7 @@ abstract class ViewModel {
 	 */
 	public function set_raw($name, $val)
 	{
-		$this->_template->set($name, $val, false);
+		$this->_template->{$name} = $val;
 	}
 
 	/**

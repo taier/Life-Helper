@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -47,11 +47,6 @@ class Input {
 		elseif (static::server('REMOTE_ADDR') !== null)
 		{
 			return static::server('REMOTE_ADDR');
-		}
-		else
-		{
-			// detection failed, return a dummy IP
-			return '0.0.0.0';
 		}
 	}
 

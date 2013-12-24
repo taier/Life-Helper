@@ -20,5 +20,5 @@
 	<strong>Login hash:</strong>
 	<?php echo $users->login_hash; ?></p>
 
-<?php echo Html::anchor('users/edit/'.$users->id, 'Edit'); ?> | 
-<?php echo Html::anchor('users', 'Back'); ?>
+<?php echo HTML::anchor('users/edit/'.$users->id, 'Edit'); ?> | 
+<?php echo HTML::anchor('users', 'Back'); ?>

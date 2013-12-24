@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 return array(
@@ -19,7 +19,7 @@ return array(
 	 *
 	 * Set this to false or remove if you using mod_rewrite.
 	 */
-	//'index_file'	=> 'index.php',
+	#'index_file'	=> 'index.php',
 
 	/**
 	 * Your environment.  Can be set to any of the following:
@@ -37,16 +37,22 @@ return array(
 	'cache_dir'			=> APPPATH.'cache/',
 	'cache_lifetime'	=> 3600, // In Seconds
 
-	'errors'  => array(
+	/**
+	 * Show notices
+	 *
+	 * Some helper functions return false instead of an expected return type on invalid input,
+	 * do you want Fuel to show notices explaining why false was returned?
+	 * Even when true, only shows when environment is not PRODUCTION
+	 */
+	'show_notices'	=> true,
 
-		// Which errors should we show, but continue execution?
-		'continue_on'  => array(E_NOTICE, E_WARNING, E_DEPRECATED, E_STRICT),
-
-		// How many errors should we show before we stop showing them? (prevents out-of-memory errors)
-		'throttle'     => 10,
-
-		'notices'      => true,
-	),
+	/**
+	 * Error throttling
+	 *
+	 * Limits the number of errors that receive full reporting and/or logging to prevent
+	 * out-of-memory crashes.
+	 */
+	'error_throttling'	=> 10,
 
 	'language'		=> 'en',
 
@@ -81,25 +87,17 @@ return array(
 		'csrf_token_key'		=> 'fuel_csrf_token',
 		'csrf_expiration'		=> 0,
 		'uri_filter'			=> array('htmlentities'),
-
+		
 		/**
 		 * This input filter can be any normal PHP function as well as 'xss_clean'
-		 *
+		 * 
 		 * WARNING: Using xss_clean will cause a performance hit.  How much is
 		 * dependant on how much input data there is.
 		 */
-		'input_filter'			=> array(),
-
-		/**
-		 * Whether to automatically encode (htmlentities) view data
-		 */
-		'auto_encode_view_data'	=> true,
-
-		/**
-		 * With output encoding switched on all objects passed will be converted to strings or
-		 * throw exceptions unless they are instances of the classes in this array.
-		 */
-		'whitelisted_classes' => array('Fuel\\Core\\View', 'Fuel\\Core\\ViewModel', 'Closure')
+		'input_filter'			=> array(
+			// 'xss_clean',
+			'htmlentities'
+		),
 	),
 
 	/**
@@ -132,7 +130,7 @@ return array(
 		 * );
 		 */
 		'packages'	=> array(
-			'orm',
+			'activerecord',
             'auth',
 		),
 
@@ -172,6 +170,16 @@ return array(
 		'language'	=> array(),
 	),
 
+	/**************************************************************************/
+	/* Routes                                                                 */
+	/**************************************************************************/
+
+	'routes'	=> array(
+		// This is the default route.  We use a "#" here so that we do not have any
+		// reserved routes.
+		'#'		=> 'users',
+		'404'	=> 'welcome/404',
+	),
 );
 
 /* End of file config.php */

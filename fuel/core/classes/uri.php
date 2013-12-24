@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -116,7 +116,12 @@ class Uri {
 	 */
 	public static function segment($segment, $default = null)
 	{
-		return \Request::active()->uri->get_segment($segment, $default);
+		if (isset(\Request::active()->uri->segments[$segment - 1]))
+		{
+			return \Request::active()->uri->segments[$segment - 1];
+		}
+
+		return $default;
 	}
 
 	/**
@@ -126,7 +131,7 @@ class Uri {
 	 */
 	public static function segments()
 	{
-		return \Request::active()->uri->get_segments();
+		return \Request::active()->uri->segments;
 	}
 
 	/**
@@ -136,7 +141,7 @@ class Uri {
 	 */
 	public static function string()
 	{
-		return \Request::active()->uri->get();
+		return \Request::active()->uri->uri;
 	}
 
 	/**
@@ -218,33 +223,13 @@ class Uri {
 		{
 			$uri = static::detect();
 		}
-		$this->uri = \Security::clean_uri(trim($uri, '/'));
+		$this->uri = trim($uri, '/');
 		$this->segments = explode('/', $this->uri);
-	}
-
-	public function get()
-	{
-		return $this->uri;
-	}
-
-	public function get_segments()
-	{
-		return $this->segments;
-	}
-
-	public function get_segment($segment, $default = null)
-	{
-		if (isset($this->segments[$segment - 1]))
-		{
-			return $this->segments[$segment - 1];
-		}
-
-		return $default;
 	}
 
 	public function __toString()
 	{
-		return $this->get();
+		return $this->uri;
 	}
 }
 

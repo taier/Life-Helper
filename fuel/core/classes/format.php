@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -81,11 +81,11 @@ class Format {
 
 		$array = array();
 
-		foreach ((array) $data as $key => $value)
+		foreach ((array) $this->_data as $key => $value)
 		{
 			if (is_object($value) or is_array($value))
 			{
-				$array[$key] = $this->to_array($value);
+				$array[$key] = static::to_array($value);
 			}
 
 			else
@@ -98,7 +98,7 @@ class Format {
 	}
 
 	// Format XML for output
-	public function to_xml($data = null, $structure = null, $basenode = 'xml')
+	public function to_xml($data = null, $structure = NULL, $basenode = 'xml')
 	{
 		if ($data == null)
 		{
@@ -111,7 +111,7 @@ class Format {
 			ini_set('zend.ze1_compatibility_mode', 0);
 		}
 
-		if ($structure == null)
+		if ($structure == NULL)
 		{
 			$structure = simplexml_load_string("<?xml version='1.0' encoding='utf-8'?><$basenode />");
 		}
@@ -126,26 +126,28 @@ class Format {
 		{
 			// no numeric keys in our xml please!
 			if (is_numeric($key))
-            {
-                // make string key...           
-                $key = (Inflector::singularize($basenode) != $basenode) ? Inflector::singularize($basenode) : 'item';
-            }
+			{
+				// make string key...
+				//$key = "item_". (string) $key;
+				$key = "item";
+			}
 
 			// replace anything not alpha numeric
 			$key = preg_replace('/[^a-z_\-0-9]/i', '', $key);
 
-            // if there is another array found recrusively call this function
-            if (is_array($value) || is_object($value))
-            {
-                $node = $structure->addChild($key);
+			// if there is another array found recrusively call this function
+			if (is_array($value) OR is_object($value))
+			{
+				$node = $structure->addChild($key);
+				// recrusive call.
+				$this->to_xml($value, $node, $basenode);
+			}
+			else
+			{
+				// Actual boolean values need to be converted to numbers
+				is_bool($value) AND $value = (int) $value;
 
-                // recrusive call.
-                $this->to_xml($value, $node, $key);
-            }
-
-            else
-            {
-                // add single node.
+				// add single node.
 				$value = htmlspecialchars(html_entity_decode($value, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, "UTF-8");
 
 				$structure->addChild($key, $value);
@@ -223,36 +225,11 @@ class Format {
 		return serialize($this->_data);
 	}
 
-	// Return as a string representing the PHP structure
-	public function to_php()
-	{
-	    return var_export($this->_data, TRUE);
-	}
-
-	public function to_yaml()
-	{
-		if ( ! function_exists('spyc_load'))
-		{
-			import('spyc/spyc', 'vendor');
-		}
-		
-		return \Spyc::YAMLDump($this->_data);
-	}
 
 	// Format XML for output
 	protected function _from_xml($string)
 	{
-		return $string ? (array) simplexml_load_string($string, 'SimpleXMLElement', LIBXML_NOCDATA) : array();
-	}
-
-	protected function _from_yaml($string)
-	{
-		if ( ! function_exists('spyc_load'))
-		{
-			import('spyc/spyc', 'vendor');
-		}
-
-		return \Spyc::YAMLLoadString($string);
+		return (array) simplexml_load_string($string);
 	}
 
 	// Format HTML for output

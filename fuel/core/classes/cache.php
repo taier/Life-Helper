@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -79,7 +79,7 @@ class Cache {
 	 * @param	array			Contains the identifiers of caches this one will depend on (not supported by all drivers!)
 	 * @return	object			The new request
 	 */
-	public static function set($identifier, $contents = null, $expiration = false, $dependencies = array())
+	public static function set($identifier, $contents = null, $expiration = null, $dependencies = array())
 	{
 		$cache = static::factory($identifier);
 		return $cache->set($contents, $expiration, $dependencies);

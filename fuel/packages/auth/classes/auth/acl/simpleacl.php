@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Auth;
@@ -32,51 +32,40 @@ class Auth_Acl_SimpleAcl extends \Auth_Acl_Driver {
 			return false;
 		}
 
-		$area    = $condition[0];
-		$rights  = $condition[1];
-		$current_roles  = $group->get_roles($entity[1]);
-		$current_rights = array();
+		$area = $condition[0];
+		$rights = $condition[1];
+		$current_roles = $group->get_roles($entity[1]);
+		$current_rights = '';
 		if (is_array($current_roles))
 		{
 			$roles = \Config::get('simpleauth.roles', array());
 			array_key_exists('#', $roles) && array_unshift($current_roles, '#');
 			foreach ($current_roles as $r_role)
 			{
-				// continue if the role wasn't found
-				if ( ! array_key_exists($r_role, $roles))
-				{
-					continue;
-				}
-				$r_rights = $roles[$r_role];
-
-				// if one of the roles has a negative wildcard (false) return it
-				if ($r_rights === false)
+				if ( ! array_key_exists($r_role, $roles) || ($r_rights = $roles[$r_role]) === false)
 				{
 					return false;
 				}
-				// if one of the roles has a positive wildecard (true) return it
-				elseif ($r_rights === true)
+
+				if (array_key_exists($area, $r_rights))
 				{
-					return true;
-				}
-				// if there are roles for the current area, merge them with earlier fetched roles
-				elseif (array_key_exists($area, $r_rights))
-				{
-					$current_rights = array_unique(array_merge($current_rights, $r_rights[$area]));
+					$current_rights = ($r_rights === true || $current_rights === true)
+						? true
+						: $current_rights . $r_rights[$area];
 				}
 			}
 		}
 
-		// start checking rights, terminate false when right not found
+		// start checking rights, terminate false when character not found
+		$rights = array_unique(preg_split('//', $rights, -1, PREG_SPLIT_NO_EMPTY));
 		foreach ($rights as $right)
 		{
-			if ( ! in_array($right, $current_rights))
+			if (strpos($current_rights, $right) === false)
 			{
 				return false;
 			}
 		}
 
-		// all necessary rights were found, return true
 		return true;
 	}
 }

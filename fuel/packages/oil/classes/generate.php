@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Oil;
@@ -24,43 +24,39 @@ namespace Oil;
  */
 class Generate
 {
-	public static $create_folders = array();
-	public static $create_files = array();
-
-	public static $scaffolding = false;
-
 	private static $_default_constraints = array(
 		'varchar' => 255,
-		'char' => 255,
 		'int' => 11
 	);
 
-	public static function controller($args, $build = true)
+	public function controller($args)
 	{
 		$args = self::_clear_args($args);
 		$singular = strtolower(array_shift($args));
 		$actions = $args;
 
-		$filepath = APPPATH . 'classes/controller/'.trim(str_replace(array('_', '-'), DS, $singular), DS).'.php';
+		$filepath = APPPATH . 'classes/controller/' . $singular .'.php';
 
-		// Uppercase each part of the class name and remove hyphens
-		$class_name = static::class_name($singular);
+		$class_name = ucfirst($singular);
 
 		// Stick "blogs" to the start of the array
 		array_unshift($args, $singular);
 
 		// Create views folder and each view file
-		static::views($args, false);
+		static::views($args);
 
-       $actions or $actions = array('index');
-
+        if (empty($actions))
+		{
+			$actions = array('index');
+		}
+        
 		$action_str = '';
 		foreach ($actions as $action)
 		{
 			$action_str .= '
 	public function action_'.$action.'()
 	{
-		$this->template->title = \'' . \Inflector::humanize($singular) .' &raquo; ' . \Inflector::humanize($action) . '\';
+		$this->template->title = \'' . \Inflector::humanize($singular) .' &raquo ' . \Inflector::humanize($action) . '\';
 		$this->template->content = View::factory(\''.$singular .'/' . $action .'\');
 	}'.PHP_EOL;
 		}
@@ -77,12 +73,14 @@ class Controller_{$class_name} extends Controller_Template {
 CONTROLLER;
 
 		// Write controller
-		static::create($filepath, $controller, 'controller');
-		$build and static::build();
+		if (self::write($filepath, $controller))
+		{
+			\Cli::write("\t".'Created controller: ' . \Fuel::clean_path($filepath));
+		}
 	}
 
 
-	public static function model($args, $build = true)
+	public function model($args)
 	{
 		$singular = strtolower(array_shift($args));
 
@@ -93,114 +91,90 @@ CONTROLLER;
 
 		$plural = \Inflector::pluralize($singular);
 
-		$filepath = APPPATH . 'classes/model/'.trim(str_replace(array('_', '-'), DS, $singular), DS).'.php';
+		$filepath = APPPATH . 'classes/model/' . $singular .'.php';
 
-		// Uppercase each part of the class name and remove hyphens
-		$class_name = static::class_name($singular);
+		$class_name = ucfirst($singular);
 
 		$model = <<<MODEL
 <?php
 
-class Model_{$class_name} extends Orm\Model { }
+class Model_{$class_name} extends ActiveRecord\Model { }
 
 /* End of file $singular.php */
 MODEL;
 
-		// Build the model
-		static::create($filepath, $model, 'model');
+		if (self::write($filepath, $model))
+		{
+			\Cli::write("\t".'Created model: ' . \Fuel::clean_path($filepath));
+		}
 
 		if ( ! empty($args))
 		{
 			array_unshift($args, 'create_'.$plural);
-			static::migration($args, false);
+			static::migration($args);
 		}
-
-		else
-		{
-			throw new Exception('Not enough arguments to create this migration.');
-		}
-
-		$build and static::build();
 	}
 
 
-	public static function views($args, $build = true)
+	public function views($args)
 	{
 		$args = self::_clear_args($args);
-		$controller = strtolower(array_shift($args));
-		$controller_title = \Inflector::humanize($controller);
+		$folder = array_shift($args);
+		$controller_title = \Inflector::humanize($folder);
 
-		$view_dir = APPPATH.'views/'.trim(str_replace(array('_', '-'), DS, $controller), DS).DS;
-
-		$args or $args = array('index');
+		empty($args) and $args = array('index');
 
 		// Make the directory for these views to be store in
-		is_dir($view_dir) or static::$create_folders[] = $view_dir;
+		if ( ! is_dir($view_dir = APPPATH . 'views/'.$folder.'/'))
+		{
+			mkdir($view_dir, 0777);
+		}
 
 		// Add the default template if it doesnt exist
-		if ( ! file_exists($app_template = APPPATH.'views/template.php'))
+		if ( ! file_exists($app_template = APPPATH . 'views/template.php'))
 		{
-			static::create($app_template, file_get_contents(PKGPATH.'oil/views/default/template.php'), 'view');
+			copy(PKGPATH . 'oil/views/default/template.php', $app_template);
+			chmod($app_template, 0666);
 		}
+		unset($app_template);
 
 		foreach ($args as $action)
 		{
 			$view_title = \Inflector::humanize($action);
+//			$view_filepath = \Fuel::clean_path($view_file = $view_dir . $action . '.php');
+			$view_filepath = $view_file = $view_dir . $action . '.php';
+
 			$view = <<<VIEW
-<p>{$view_title}</p>
+<p>Edit this content in {$view_filepath}</p>
 VIEW;
 
-			// Create this view
-			static::create($view_dir.$action.'.php', $view, 'view');
+			if (self::write($view_file, $view))
+			{
+				\Cli::write("\t".'Created view: ' . \Fuel::clean_path($view_file));
+			}
 		}
-
-		$build and static::build();
 	}
 
 
-	public static function migration($args, $build = true)
+	public function migration($args)
 	{
+		
 		// Get the migration name
-		$migration_name = strtolower(str_replace('-', '_', array_shift($args)));
-
-		// Check if a migration with this name already exists
-		if (count($duplicates = glob(APPPATH."migrations/*_{$migration_name}*")) > 0)
-		{
-			// Don't override a file
-			if (\Cli::option('s', \Cli::option('skip')) === true)
-			{
-				return;
-			}
-
-			// Tear up the file path and name to get the last duplicate
-			$file_name = pathinfo(end($duplicates), PATHINFO_FILENAME);
-
-			// Override the (most recent) migration with the same name by using its number
-			if (\Cli::option('f', \Cli::option('force')) === true)
-			{
-				list($number) = explode('_', $file_name);
-			}
-
-			// Name clashes but this is done by hand. Assume they know what they're doing and just increment the file
-			elseif (static::$scaffolding === false)
-			{
-				// Increment the name of this
-				$migration_name = \Str::increment(substr($file_name, 4), 2);
-			}
-		}
-
+		$migration_name = strtolower(array_shift($args));
+		
 		// See if the action exists
 		$methods = get_class_methods(__NAMESPACE__ . '\Generate_Migration_Actions');
-
+		
 		// For empty migrations that dont have actions
 		$migration = array('', '');
-
+		
 		// Loop through the actions and act on a matching action appropriately
-		foreach ($methods as $method_name)
-		{
+		foreach($methods as $method_name)
+		{	
 			// If the miration name starts with the name of the action method
-			if (substr($migration_name, 0, strlen($method_name)) === $method_name)
+			if(substr($migration_name, 0, strlen($method_name)) === $method_name)
 			{
+				
 				/**
 				 *	Create an array of the subject the migration is about
 				 *
@@ -215,77 +189,66 @@ VIEW;
 				 */
 				$subjects = array(false, false);
 				$matches = explode('_', str_replace($method_name . '_', '', $migration_name));
-
-				// create_{table}
-				if (count($matches) == 1)
-				{
+				
+				if(count($matches) == 1) { // create_{table}
 					$subjects = array(false, $matches[0]);
 				}
-
-				// add_{field}_to_{table}
-				else if (count($matches) == 3 && $matches[1] == 'to')
+				else if(count($matches) == 3) // add_{field}_to_{table}
 				{
 					$subjects = array($matches[0], $matches[2]);
 				}
-
-				// create_{table} (with underscores in table name)
-				else if (count($matches) !== 0)
-				{
-					$subjects = array(false, implode('_', $matches));
-				}
-
-				// There is no subject here so just carry on with a normal empty migration
 				else
 				{
+					// There is no subject here so just carry on with a normal empty migration
 					break;
 				}
-
+				
 				// We always pass in fields to a migration, so lets sort them out here.
 				$fields = array();
-				foreach ($args as $field)
+				foreach($args as $field)
 				{
 					$field_array = array();
-
+					
 					// Each paramater for a field is seperated by the : character
 					$parts = explode(":", $field);
-
+					
 					// We must have the 'name:type' if nothing else!
-					if (count($parts) >= 2)
+					if(count($parts) >= 2)
 					{
 						$field_array['name'] = array_shift($parts);
-						foreach ($parts as $part_i => $part)
+						foreach($parts as $part_i => $part)
 						{
 							preg_match('/([a-z0-9_-]+)(?:\[([a-z0-9]+)\])?/i', $part, $part_matches);
 							array_shift($part_matches);
-
-							if (count($part_matches) < 1)
+							
+							if(count($part_matches) < 1)
 							{
 								// Move onto the next part, something is wrong here...
 								continue;
 							}
-
+							
 							$option_name = ''; // This is the name of the option to be passed to the action in a field
 							$option = $part_matches;
-
+							
 							// The first option always has to be the field type
-							if ($part_i == 0)
+							if($part_i == 0)
 							{
 								$option_name = 'type';
 								$type = $option[0];
-								if ($type === 'string')
+								if($type === 'string')
 								{
 									$type = 'varchar';
 								}
-								else if ($type === 'integer')
+								else if($type === 'integer')
 								{
 									$type = 'int';
 								}
 
-								if ( ! in_array($type, array('text', 'blob', 'datetime', 'date', 'timestamp', 'time')))
+								if(!in_array($type, array('text', 'blob', 'datetime', 'date', 'timestamp', 'time')))
 								{
-									if ( ! isset($option[1]) || $option[1] == NULL)
+									if(!isset($option[1]) || $option[1] == NULL)
 									{
-										if (isset(self::$_default_constraints[$type]))
+										if(isset(self::$_default_constraints[$type]))
 										{
 											$field_array['constraint'] = self::$_default_constraints[$type];
 										}
@@ -302,7 +265,7 @@ VIEW;
 								// This allows you to put any number of :option or :option[val] into your field and these will...
 								// ... always be passed through to the action making it really easy to add extra options for a field
 								$option_name = array_shift($option);
-								if (count($option) > 0)
+								if(count($option) > 0)
 								{
 									$option = $option[0];
 								}
@@ -310,10 +273,10 @@ VIEW;
 								{
 									$option = true;
 								}
-							}
-
+							}	
+							
 							$field_array[$option_name] = $option;
-
+													
 						}
 						$fields[] = $field_array;
 					}
@@ -323,46 +286,27 @@ VIEW;
 						continue;
 					}
 				}
-
+				
 				// Call the magic action which returns an array($up, $down) for the migration
+				\Cli::write("\tBuilding magic migration:" . $method_name);
 				$migration = call_user_func(__NAMESPACE__ . "\Generate_Migration_Actions::{$method_name}", $subjects, $fields);
+				
+			}
+			else
+			{
+				// No magic action for this migration...
 			}
 		}
-
+		
 		// Build the migration
-		list($up, $down)=$migration;
-
-		$migration_name = ucfirst(strtolower($migration_name));
-
-		$migration = <<<MIGRATION
-<?php
-
-namespace Fuel\Migrations;
-
-class {$migration_name} {
-
-	public function up()
-	{
-{$up}
-	}
-
-	public function down()
-	{
-{$down}
-	}
-}
-MIGRATION;
-
-		$number = isset($number) ? $number : static::_find_migration_number();
-		$filepath = APPPATH . 'migrations/'.$number.'_' . strtolower($migration_name) . '.php';
-
-		static::create($filepath, $migration, 'migration');
-
-		$build and static::build();
+		if ($filepath = static::_build_migration($migration_name, $migration[0], $migration[1]))
+		{
+			\Cli::write("\tCreated migration: " . \Fuel::clean_path($filepath), 'green');
+		}
 	}
 
 
-	public static function help()
+	public function help()
 	{
 		$output = <<<HELP
 Usage:
@@ -383,10 +327,10 @@ Examples:
   php oil g scaffold <modelname> [<fieldname1>:<type1> |<fieldname2>:<type2> |..]
   php oil g scaffold/template_subfolder <modelname> [<fieldname1>:<type1> |<fieldname2>:<type2> |..]
 
-Note that the next two lines are equivalent:
+Note that the next two lines are equivalent: 
   php oil g scaffold <modelname> ...
   php oil g scaffold/default <modelname> ...
-
+  
 Documentation:
   http://fuelphp.com/docs/packages/oil/generate.html
 HELP;
@@ -395,106 +339,97 @@ HELP;
 	}
 
 
-	public static function create($filepath, $contents, $type = 'file')
+	// Helper functions
+
+
+	private function write($filepath, $data)
 	{
-		$directory = dirname($filepath);
-		is_dir($directory) or static::$create_folders[] = $directory;
-
-		// Check if a file exists then work out how to react
-		if (file_exists($filepath))
+		if ( ! $handle = @fopen($filepath, 'w+'))
 		{
-			// Don't override a file
-			if (\Cli::option('s', \Cli::option('skip')) === true)
-			{
-				// Don't bother trying to make this, carry on camping
-				return;
-			}
-
-			// If we aren't skipping it, tell em to use -f
-			if (\Cli::option('f', \Cli::option('force')) === null)
-			{
-				throw new Exception($filepath .' already exists, use -f or --force to override.');
-				exit;
-			}
+			throw new Exception('Cannot open file: '. $filepath);
 		}
 
-		static::$create_files[] = array(
-			'path' => $filepath,
-			'contents' => $contents,
-			'type' => $type
-		);
-	}
+		$result = @fwrite($handle, $data);
 
-
-	public static function build()
-	{
-		foreach (static::$create_folders as $folder)
+		// Write $somecontent to our opened file.
+		if ($result === FALSE)
 		{
-			is_dir($folder) or mkdir($folder, 0755, TRUE);
+			throw new Exception('Cannot write to file: '. $filepath);
 		}
 
-		foreach (static::$create_files as $file)
-		{
-			\Cli::write("\tCreating {$file['type']}: {$file['path']}", 'green');
+		@fclose($handle);
 
-			if ( ! $handle = @fopen($file['path'], 'w+'))
-			{
-				throw new Exception('Cannot open file: '. $file['path']);
-			}
-
-			$result = @fwrite($handle, $file['contents']);
-
-			// Write $somecontent to our opened file.
-			if ($result === FALSE)
-			{
-				throw new Exception('Cannot write to file: '. $file['path']);
-			}
-
-			@fclose($handle);
-
-			@chmod($file['path'], 0666);
-		}
+		chmod($filepath, 0666);
 
 		return $result;
 	}
-
-	public static function class_name($name)
+	
+	private function _build_migration($migration_name, $up, $down)
 	{
-		return str_replace(array(' ', '-'), '_', ucwords(str_replace('_', ' ', $name)));
+		$migration_name = ucfirst(strtolower($migration_name));
+
+		$migration = <<<MIGRATION
+<?php
+
+namespace Fuel\Migrations;
+
+class {$migration_name} {
+
+	function up()
+	{
+{$up}
 	}
 
-	// Helper methods
-
-	private static function _find_migration_number()
+	function down()
 	{
-		$glob = glob(APPPATH .'migrations/*_*.php');
-		list($last) = explode('_', basename(end($glob)));
+{$down}
+	}
+}
+MIGRATION;
+
+		$number = self::_find_migration_number();
+		$filepath = APPPATH . 'migrations/'.$number.'_' . strtolower($migration_name) . '.php';
+
+		if (glob(APPPATH . 'migrations/*_' . strtolower($migration_name) . '.php'))
+		{
+			throw new Exception('A migration with this name already exists.');
+		}
+
+		if (self::write($filepath, $migration))
+		{
+			self::_update_current_version(intval($number));
+			return $filepath;
+		}
+
+		return false;
+	}
+
+	private function _find_migration_number()
+	{
+		list($last) = explode('_', basename(end(glob(APPPATH .'migrations/*_*.php'))));
 
 		return str_pad($last + 1, 3, '0', STR_PAD_LEFT);
 	}
 
-	private static function _update_current_version($version)
+	private function _update_current_version($version)
 	{
-		if (file_exists($app_path = APPPATH.'config'.DS.'migrations.php'))
+		$contents = '';
+		$path = '';
+		if (file_exists($path = APPPATH.'config'.DS.'migration.php'))
 		{
-			$contents = file_get_contents($app_path);
+			$contents = file_get_contents($path);
 		}
-		elseif (file_exists($core_path = COREPATH.'config'.DS.'migrations.php'))
+		elseif (file_exists($path = COREPATH.'config'.DS.'migration.php'))
 		{
-			$contents = file_get_contents($core_path);
-		}
-		else
-		{
-			throw new Exception('Config file core/config/migrations.php');
-			exit;
+			$contents = file_get_contents($path );
 		}
 
 		$contents = preg_replace("#('version'[ \t]+=>)[ \t]+([0-9]+),#i", "$1 $version,", $contents);
 
-		static::create($app_path, $contents, 'config');
+		self::write($path, $contents);
 	}
 
-	private static function _clear_args($actions = array())
+	private function _clear_args($actions = array())
 	{
  		foreach ($actions as $key => $action)
 		{

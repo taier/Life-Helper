@@ -4,18 +4,16 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Auth;
 
-import('phpseclib/Crypt/Hash', 'vendor');
-use \PHPSecLib\Crypt_Hash;
 
 abstract class Auth_Login_Driver extends \Auth_Driver {
 
@@ -34,7 +32,7 @@ abstract class Auth_Login_Driver extends \Auth_Driver {
 		// default driver id to driver name when not given
 		! array_key_exists('id', $config) && $config['id'] = $config['driver'];
 
-		$class = \Inflector::get_namespace($config['driver']).'Auth_Login_'.ucfirst(\Inflector::denamespace($config['driver']));
+		$class = 'Auth_Login_'.ucfirst($config['driver']);
 		$driver = new $class($config);
 		static::$_instances[$driver->get_id()] = $driver;
 
@@ -62,11 +60,6 @@ abstract class Auth_Login_Driver extends \Auth_Driver {
 		'salt_prefix' => '',
 		'salt_postfix' => ''
 	);
-
-	/**
-	 * @var	object	PHPSecLib hash object
-	 */
-	protected $hasher = null;
 
 	/**
 	 * Check for login
@@ -177,9 +170,7 @@ abstract class Auth_Login_Driver extends \Auth_Driver {
 	 */
 	public function hash_password($password)
 	{
-		is_null($this->hasher) && $this->hasher = new Crypt_Hash();
-
-		return base64_encode($this->hasher->pbkdf2($password, @$this->config['salt_prefix'].@$this->config['salt_postfix'], 10000, 32));
+		return sha1(@$this->config['salt_prefix'].$password.@$this->config['salt_postfix']);
 	}
 
 	// ------------------------------------------------------------------------

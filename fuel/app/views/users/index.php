@@ -23,12 +23,12 @@
 		<td><?php echo $users->group; ?></td>
 		<td><?php echo $users->last_login; ?></td>
 		<td><?php echo $users->login_hash; ?></td>
-		<td><?php echo Html::anchor('users/view/'.$users->id, 'View'); ?></td>
-		<td><?php echo Html::anchor('users/edit/'.$users->id, 'Edit'); ?></td>
-		<td><?php echo Html::anchor('users/delete/'.$users->id, 'Delete', array('onclick' => "return confirm('Are you sure?')")); ?></td>
+		<td><?php echo HTML::anchor('users/view/'.$users->id, 'View'); ?></td>
+		<td><?php echo HTML::anchor('users/edit/'.$users->id, 'Edit'); ?></td>
+		<td><?php echo HTML::anchor('users/delete/'.$users->id, 'Delete', array('onclick' => "return confirm('Are you sure?')")); ?></td>
 	</tr>
 	<?php endforeach; ?></table>
 
 <br />
 
-<?php echo Html::anchor('users/create', 'Add new Users'); ?>
+<?php echo HTML::anchor('users/create', 'Add new Users'); ?>

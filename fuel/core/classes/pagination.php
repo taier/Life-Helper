@@ -107,7 +107,7 @@ class Pagination {
 
 		static::$total_pages = ceil(static::$total_items / static::$per_page) ?: 1;
 
-		is_null(static::$current_page) and static::$current_page = (int) \URI::segment(static::$uri_segment);
+		static::$current_page = (int) \URI::segment(static::$uri_segment);
 
 		if (static::$current_page > static::$total_pages)
 		{
@@ -138,36 +138,15 @@ class Pagination {
 		}
 
 		$pagination = '';
-		$pagination .= '&nbsp;'.static::prev_link('&laquo; Previous').'&nbsp;&nbsp;';
-		$pagination .= static::page_links();
-		$pagination .= '&nbsp;'.static::next_link('Next &raquo;');
 
-		return $pagination;
-	}
-	
-	// --------------------------------------------------------------------
-
-	/**
-	 * Pagination Page Number links
-	 *
-	 * @access public
-	 * @return mixed    Markup for page number links
-	 */
-	public static function page_links()
-	{
-		if (static::$total_pages == 1)
-		{
-			return '';
-		}
-		
-		$pagination = '';
-		
 		// Let's get the starting page number, this is determined using num_links
 		$start = ((static::$current_page - static::$num_links) > 0) ? static::$current_page - (static::$num_links - 1) : 1;
 
 		// Let's get the ending page number
 		$end   = ((static::$current_page + static::$num_links) < static::$total_pages) ? static::$current_page + static::$num_links : static::$total_pages;
-		
+
+		$pagination .= '&nbsp;'.static::prev_link('&laquo Previous').'&nbsp;&nbsp;';
+
 		for($i = $start; $i <= $end; $i++)
 		{
 			if (static::$current_page == $i)
@@ -180,7 +159,9 @@ class Pagination {
 				$pagination .= \Html::anchor(rtrim(static::$pagination_url, '/') . $url, $i);
 			}
 		}
-		
+
+		$pagination .= '&nbsp;'.static::next_link('Next &raquo;');
+
 		return $pagination;
 	}
 

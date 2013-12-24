@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -282,10 +282,7 @@ class File {
 			throw new \File_Exception('Invalid basepath, cannot update a file at this location.');
 		}
 
-		if ( ! $file = static::open_file(@fopen($new_file, 'w'), true, $area) )
-		{
-			throw new \File_Exception('No write access, cannot update a file.');
-		}
+		$file = static::open_file(@fopen($new_file, 'w'), true, $area);
 		fwrite($file, $contents);
 		static::close_file($file, $area);
 
@@ -499,12 +496,6 @@ class File {
 		if (is_string($resource))
 		{
 			$resource = fopen($resource, 'r+');
-		}
-
-		// Make sure the parameter is a valid resource
-		if ( ! is_resource($resource))
-		{
-			return false;
 		}
 
 		// If locks aren't used, don't lock

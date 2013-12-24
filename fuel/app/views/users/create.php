@@ -2,4 +2,4 @@
 
 <?php echo render('users/_form'); ?>
 
-<?php echo Html::anchor('users', 'Back'); ?>
+<?php echo HTML::anchor('users', 'Back'); ?>

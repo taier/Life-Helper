@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 return array(
@@ -19,9 +19,9 @@ return array(
 		'type'			=> 'mysql',
 		'connection'	=> array(
 			'hostname'   => 'localhost',
-			'database'   => 'life_helper',
-			'username'   => 'life_helper',
-			'password'   => 'life_helper',
+			'database'   => 'fuelphp_1',
+			'username'   => 'fuelphp_1',
+			'password'   => 'fuelphp_1',
 			'persistent' => false,
 		),
 		'table_prefix' => '',

@@ -1,6 +1,6 @@
 		$<?php echo $singular; ?> = <?php echo $model; ?>::find($id);
 
-		if (Input::method() == 'POST')
+		if ($_POST)
 		{
 <?php foreach ($fields as $field): ?>
 			$<?php echo $singular; ?>-><?php echo $field['name']; ?> = Input::post('<?php echo $field['name']; ?>');
@@ -8,14 +8,14 @@
 
 			if ($<?php echo $singular; ?>->save())
 			{
-				Session::set_flash('notice', 'Updated <?php echo $singular; ?> #' . $id);
+				Session::set_flash('notice', 'Updated ' . $<?php echo $singular; ?> . ' #' . $<?php echo $singular; ?>->id);
 
-				Response::redirect('<?php echo $plural; ?>');
+				Output::redirect('<?php echo $plural; ?>');
 			}
 
 			else
 			{
-				Session::set_flash('notice', 'Could not update <?php echo $singular; ?> #' . $id);
+				Session::set_flash('notice', 'Could not update ' . $<?php echo $singular; ?> . ' #' . $id);
 			}
 		}
 		

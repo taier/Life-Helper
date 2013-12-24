@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -85,11 +85,8 @@ class Validation_Error extends \Exception {
 	 * @param	string	Message to use, or false to try and load it from Lang class
 	 * @return	string
 	 */
-	public function get_message($msg = false, $open = null, $close = null)
+	public function get_message($msg = false)
 	{
-		$open   = \Config::get('validation.open_single_error', '');
-		$close  = \Config::get('validation.close_single_error', '');
-
 		if ($msg === false)
 		{
 			$msg = $this->field->fieldset()->validation()->get_message($this->callback);
@@ -99,13 +96,13 @@ class Validation_Error extends \Exception {
 		}
 		if ($msg == false)
 		{
-			return $open.'Validation rule '.$this->callback.' failed for '.$this->field->label.$close;
+			return 'Validation rule '.$this->callback.' failed for '.$this->field->label;
 		}
 
 		// to safe some performance when there are no variables in the $msg
 		if (strpos(':', $msg) !== false)
 		{
-			return $open.$msg.$close;
+			return $msg;
 		}
 
 		$find			= array(':field', ':label', ':value', ':rule');
@@ -116,7 +113,7 @@ class Validation_Error extends \Exception {
 			$replace[]	= $val;
 		}
 
-		return $open.str_replace($find, $replace, $msg).$close;
+		return str_replace($find, $replace, $msg);
 	}
 
 	public function __toString()

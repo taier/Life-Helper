@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -144,9 +144,9 @@ class Form {
 		$attributes = ! is_array($attributes) ? array('action' => (string) $attributes) : $attributes;
 
 		// If there is still no action set, Form-post
-		if( ! array_key_exists('action', $attributes))
+		if(empty($attributes['action']))
 		{
-			$attributes['action'] = \Uri::current();
+			$attributes['action'] = '';
 		}
 
 		// If not a full URL, create one
@@ -157,7 +157,7 @@ class Form {
 
 		if (empty($attributes['accept-charset']))
 		{
-			$attributes['accept-charset'] = strtolower(\Fuel::$encoding);
+			$attributes['accept-charset'] = strtolower(INTERNAL_ENC);
 		}
 
 		// If method is empty, use POST
@@ -202,7 +202,6 @@ class Form {
 		if (is_array($field))
 		{
 			$attributes = $field;
-			! array_key_exists('value', $attributes) and $attributes['value'] = '';
 		}
 		else
 		{
@@ -346,9 +345,9 @@ class Form {
 			$attributes['name'] = (string) $field;
 			$attributes['value'] = (string) $value;
 		}
-		isset($attributes['type']) ||  $attributes['type'] = 'button';
+		$attributes['type'] = 'button';
 
-		return html_tag('button', static::attr_to_string($attributes), $value);
+		return static::input($attributes);
 	}
 
 	/**
@@ -444,19 +443,20 @@ class Form {
 	 * @param	array
 	 * @return	string
 	 */
-	public static function select($field, $values = null, Array $options = array(), Array $attributes = array())
+	public static function select($field, $value = null, Array $options = array(), Array $attributes = array())
 	{
 		if (is_array($field))
 		{
 			$attributes = $field;
-			$attributes['selected'] = empty($attributes['value']) ? '' : $attributes['value'];
 		}
 		else
 		{
 			$attributes['name'] = (string) $field;
-			$attributes['selected'] = $values;
+			$attributes['selected'] = (string) $value;
 			$attributes['options'] = $options;
 		}
+
+		$value = empty($attributes['value']) ? '' : $attributes['value'];
 		unset($attributes['value']);
 
 		if ( ! isset($attributes['options']) || ! is_array($attributes['options']))
@@ -468,7 +468,7 @@ class Form {
 		unset($attributes['options']);
 
 		// Get the selected options then unset it from the array
-		$selected = empty($attributes['selected']) ? array() : array_values((array) $attributes['selected']);
+		$selected = empty($attributes['selected']) ? false : $attributes['selected'];
 		unset($attributes['selected']);
 
 		$input = PHP_EOL;
@@ -480,7 +480,7 @@ class Form {
 				foreach ($val as $opt_key => $opt_val)
 				{
 					$opt_attr = array('value' => $opt_key);
-					(in_array($opt_key, $selected)) && $opt_attr[] = 'selected';
+					($opt_key == $selected) && $opt_attr[] = 'selected';
 					$optgroup .= str_repeat("\t", 2);
 					$opt_attr['value'] = (static::get_class_config('prep_value', true) && empty($attributes['dont_prep'])) ?
 						static::prep_value($opt_attr['value']) : $opt_attr['value'];
@@ -492,7 +492,7 @@ class Form {
 			else
 			{
 				$opt_attr = array('value' => $key);
-				(in_array($key, $selected)) && $opt_attr[] = 'selected';
+				($key == $selected) && $opt_attr[] = 'selected';
 				$input .= str_repeat("\t", 1);
 				$opt_attr['value'] = (static::get_class_config('prep_value', true) && empty($attributes['dont_prep'])) ?
 					static::prep_value($opt_attr['value']) : $opt_attr['value'];
@@ -500,11 +500,6 @@ class Form {
 			}
 		}
 		$input .= str_repeat("\t", 0);
-
-		if (empty($attributes['id']) && static::get_class_config('auto_id', false) == true)
-		{
-			$attributes['id'] = static::get_class_config('auto_id_prefix', '').$attributes['name'];
-		}
 
 		return html_tag('select', static::attr_to_string($attributes), $input);
 	}
@@ -521,9 +516,8 @@ class Form {
 	{
 		if (is_array($label))
 		{
-			$attributes = $label;
 			$label = $attributes['label'];
-			isset($attributes['id']) and $id = $attributes['id'];
+			$id = $attributes['id'];
 		}
 
 		$attributes['for'] = $id;
@@ -603,20 +597,15 @@ class Form {
 		$attributes = $this->get_config('form_attributes');
 		$action && $attributes['action'] = $action;
 
-		$open = static::open($attributes).PHP_EOL;
+		$output = static::open($attributes).PHP_EOL;
 		$fields = $this->field();
-		$fields_output = '';
 		foreach ($fields as $f)
 		{
-			$fields_output .= $this->build_field($f).PHP_EOL;
+			$output .= $this->build_field($f).PHP_EOL;
 		}
-		$close = static::close();
+		$output .= static::close();
 
-		$template =  $this->get_config('form_template', "\t\t{form_open}\n{fields}\n\t\t{form_close}\n");
-		$template = str_replace(array('{form_open}', '{fields}', '{form_close}'),
-			array($open, $fields_output, $close),
-			$template);
-		return $template;
+		return $output;
 	}
 
 	/**
@@ -646,10 +635,10 @@ class Form {
 		switch($field->type)
 		{
 			case 'hidden':
-				$build_field = static::hidden($field->name, $field->value, $field->attributes);
+				$build_field = static::hidden($field);
 				break;
 			case 'radio': case 'checkbox':
-				if ($field->options())
+				if (isset($field->options))
 				{
 					$build_field = array();
 					$attributes = $field->attributes;
@@ -675,7 +664,7 @@ class Form {
 							$attributes['id'] = null;
 						}
 
-						$build_field[static::label($label, $attributes['id'])] = $field->type == 'radio'
+						$build_tag[static::label($label, $attributes['id'])] = $field->type == 'radio'
 							? static::radio($attributes)
 							: static::checkbox($attributes);
 					}
@@ -688,14 +677,10 @@ class Form {
 				}
 				break;
 			case 'select':
-				$attributes = $field->attributes;
-				unset($attributes['type']);
-				$build_field = static::select($field->name, $field->value, $field->options, $attributes);
+				$build_field = static::select($field->name, $field->value, $field->options, $field->attributes);
 				break;
 			case 'textarea':
-				$attributes = $field->attributes;
-				unset($attributes['type']);
-				$build_field = static::textarea($field->name, $field->value, $attributes);
+				$build_field = static::textarea($field->name, $field->value, $field->attributes);
 				break;
 			default:
 				$build_field = static::input($field->name, $field->value, $field->attributes);
@@ -721,8 +706,8 @@ class Form {
 
 		if (is_array($build_field))
 		{
-			$template = $field->template ?: $this->get_config('multi_field_template', "{fields}\t\t\t{label} {field}{fields}");
-			if ($template && preg_match('#\{fields\}(.*)\{fields\}#Du', $template, $match) > 0)
+			$template = $field->template ?: $this->get_config('multi_field_template', null);
+			if ($template && preg_match('#\{fields\}(.*)\{fields\}#uD', $template, $match) > 0)
 			{
 				$build_fields = '';
 				foreach ($build_field as $label => $bf)
@@ -731,7 +716,7 @@ class Form {
 					$bf_temp = str_replace('{label}', $label, $bf_temp);
 					$build_fields .= $bf_temp;
 				}
-				$template = str_replace($match[0], $build_fields, $template);
+				$template = str_replace($match[1], $build_fields, $template);
 				if ($required_mark)
 				{
 					$template = str_replace('{required}', $required_mark, $template);

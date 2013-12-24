@@ -1,4 +1,4 @@
-		if (Input::method() == 'POST')
+		if ($_POST)
 		{
 			$<?php echo $singular; ?> = <?php echo $model; ?>::factory(array(
 <?php foreach ($fields as $field): ?>
@@ -8,9 +8,9 @@
 
 			if ($<?php echo $singular; ?> and $<?php echo $singular; ?>->save())
 			{
-				Session::set_flash('notice', 'Added <?php echo $singular; ?> #' . $<?php echo $singular; ?>->id . '.');
+				Session::set_flash('notice', 'Added ' . $<?php echo $singular; ?> . ' #' . $<?php echo $singular; ?>->id . '.');
 
-				Response::redirect('<?php echo $plural; ?>');
+				Output::redirect('<?php echo $plural; ?>');
 			}
 
 			else
@@ -20,4 +20,4 @@
 		}
 
 		$this->template->title = "<?php echo ucfirst($plural); ?>";
-		$this->template->content = View::factory('<?php echo Str::lower($plural);?>/create');
+		$this->template->content = View::factory('<?php echo strtolower($plural);?>/create');

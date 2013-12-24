@@ -4,12 +4,11 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Dan Horrigan <http://dhorrigan.com>
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
  */
 
 namespace Fuel\Core;
@@ -30,55 +29,55 @@ class Inflector {
 	);
 
 	protected static $plural_rules = array(
-		'/^(ox)$/'                 => '\1\2en',     // ox
-		'/([m|l])ouse$/'           => '\1ice',      // mouse, louse
-		'/(matr|vert|ind)ix|ex$/'  => '\1ices',     // matrix, vertex, index
-		'/(x|ch|ss|sh)$/'          => '\1es',       // search, switch, fix, box, process, address
-		'/([^aeiouy]|qu)y$/'       => '\1ies',      // query, ability, agency
-		'/(hive)$/'                => '\1s',        // archive, hive
-		'/(?:([^f])fe|([lr])f)$/'  => '\1\2ves',    // half, safe, wife
-		'/sis$/'                   => 'ses',        // basis, diagnosis
-		'/([ti])um$/'              => '\1a',        // datum, medium
-		'/(p)erson$/'              => '\1eople',    // person, salesperson
-		'/(m)an$/'                 => '\1en',       // man, woman, spokesman
-		'/(c)hild$/'               => '\1hildren',  // child
-		'/(buffal|tomat)o$/'       => '\1\2oes',    // buffalo, tomato
-		'/(bu|campu)s$/'           => '\1\2ses',    // bus, campus
-		'/(alias|status|virus)/'   => '\1es',       // alias
-		'/(octop)us$/'             => '\1i',        // octopus
-		'/(ax|cri|test)is$/'       => '\1es',       // axis, crisis
-		'/s$/'                     => 's',          // no change (compatibility)
-		'/$/'                      => 's',
+		'/^(ox)$/'					=> '\1\2en',	// ox
+		'/([m|l])ouse$/'			=> '\1ice',		// mouse, louse
+		'/(matr|vert|ind)ix|ex$/'	=> '\1ices',	// matrix, vertex, index
+		'/(x|ch|ss|sh)$/'			=> '\1es',		// search, switch, fix, box, process, address
+		'/([^aeiouy]|qu)y$/'		=> '\1ies',		// query, ability, agency
+		'/(hive)$/'					=> '\1s',		// archive, hive
+		'/(?:([^f])fe|([lr])f)$/'	=> '\1\2ves',	// half, safe, wife
+		'/sis$/'					=> 'ses',		// basis, diagnosis
+		'/([ti])um$/'				=> '\1a',		// datum, medium
+		'/(p)erson$/'				=> '\1eople',	// person, salesperson
+		'/(m)an$/'					=> '\1en',		// man, woman, spokesman
+		'/(c)hild$/'				=> '\1hildren',	// child
+		'/(buffal|tomat)o$/'		=> '\1\2oes',	// buffalo, tomato
+		'/(bu)s$/'					=> '\1\2ses',	// bus
+		'/(alias|status|virus)/'	=> '\1es',		// alias
+		'/(octop)us$/'				=> '\1i',		// octopus
+		'/(ax|cri|test)is$/'		=> '\1es',		// axis, crisis
+		'/s$/'						=> 's',			// no change (compatibility)
+		'/$/'						=> 's',
 	);
 
 	protected static $singular_rules = array(
-		'/(matr)ices$/'         => '\1ix',
-		'/(vert|ind)ices$/'     => '\1ex',
-		'/^(ox)en/'             => '\1',
-		'/(alias)es$/'          => '\1',
-		'/([octop|vir])i$/'     => '\1us',
-		'/(cris|ax|test)es$/'   => '\1is',
-		'/(shoe)s$/'            => '\1',
-		'/(o)es$/'              => '\1',
-		'/(bus|campus)es$/'     => '\1',
-		'/([m|l])ice$/'         => '\1ouse',
-		'/(x|ch|ss|sh)es$/'     => '\1',
-		'/(m)ovies$/'           => '\1\2ovie',
-		'/(s)eries$/'           => '\1\2eries',
-		'/([^aeiouy]|qu)ies$/'  => '\1y',
-		'/([lr])ves$/'          => '\1f',
-		'/(tive)s$/'            => '\1',
-		'/(hive)s$/'            => '\1',
-		'/([^f])ves$/'          => '\1fe',
-		'/(^analy)ses$/'        => '\1sis',
+		'/(matr)ices$/'			=> '\1ix',
+		'/(vert|ind)ices$/'		=> '\1ex',
+		'/^(ox)en/'				=> '\1',
+		'/(alias)es$/'			=> '\1',
+		'/([octop|vir])i$/'		=> '\1us',
+		'/(cris|ax|test)es$/'	=> '\1is',
+		'/(shoe)s$/'			=> '\1',
+		'/(o)es$/'				=> '\1',
+		'/(bus)es$/'			=> '\1',
+		'/([m|l])ice$/'			=> '\1ouse',
+		'/(x|ch|ss|sh)es$/'		=> '\1',
+		'/(m)ovies$/'			=> '\1\2ovie',
+		'/(s)eries$/'			=> '\1\2eries',
+		'/([^aeiouy]|qu)ies$/'	=> '\1y',
+		'/([lr])ves$/'			=> '\1f',
+		'/(tive)s$/'			=> '\1',
+		'/(hive)s$/'			=> '\1',
+		'/([^f])ves$/'			=> '\1fe',
+		'/(^analy)ses$/'		=> '\1sis',
 		'/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$/' => '\1\2sis',
-		'/([ti])a$/'            => '\1um',
-		'/(p)eople$/'           => '\1\2erson',
-		'/(m)en$/'              => '\1an',
-		'/(s)tatuses$/'         => '\1\2tatus',
-		'/(c)hildren$/'         => '\1\2hild',
-		'/(n)ews$/'             => '\1\2ews',
-		'/s$/'                  => '',
+		'/([ti])a$/'			=> '\1um',
+		'/(p)eople$/'			=> '\1\2erson',
+		'/(m)en$/'				=> '\1an',
+		'/(s)tatuses$/'			=> '\1\2tatus',
+		'/(c)hildren$/'			=> '\1\2hild',
+		'/(n)ews$/'				=> '\1\2ews',
+		'/s$/'					=> '',
 	);
 
 
@@ -238,10 +237,9 @@ class Inflector {
 			$sep.'+' => $sep,   // multiple seperators => 1 seperator
 			$sep.'$' => '',	        // ending seperator => (nothing)
 			'^'.$sep => '',         // starting seperator => (nothing)
-			'\.+$' => '',            // ending dot => (nothing)
-			'\?' => ''                // question mark
+			'\.+$' => ''             // ending dot => (nothing)
 		);
-
+		
 		foreach ($trans as $key => $val)
 		{
 			$str = preg_replace("#".$key."#i", $val, $str);
@@ -277,7 +275,7 @@ class Inflector {
 		{
 			$str = \Str::ucfirst($str);
 		}
-
+		
 		return str_replace($sep, " ", strval($str));
 	}
 
@@ -309,22 +307,6 @@ class Inflector {
 	}
 
 	/**
-	 * Returns the namespace of the given class name.
-	 *
-	 * @param   string  $class_name  the class name
-	 * @return  string  the string without the namespace
-	 */
-	public static function get_namespace($class_name)
-	{
-		$class_name = trim($class_name, '\\');
-		if ($last_separator = strrpos($class_name, '\\'))
-		{
-			return substr($class_name, 0, $last_separator + 1);
-		}
-		return '';
-	}
-
-	/**
 	 * Takes a class name and determines the table name.  The table name is a
 	 * pluralized version of the class name.
 	 *
@@ -349,7 +331,7 @@ class Inflector {
 	 */
 	public static function classify($table_name)
 	{
-		return preg_replace('/(^|_)(.)/e', "strtoupper('\\1\\2')", static::singularize($table_name));
+		return static::camelize(static::singularize($table_name));
 	}
 
 	/**

@@ -68,16 +68,7 @@ abstract class Controller_Rest extends \Controller {
 		// If they call user, go to $this->post_user();
 		$controller_method = strtolower(\Input::method()) . '_' . $resource;
 
-		// If method is not available, set status code to 404
-		if (method_exists($this, $controller_method))
-		{
-			call_user_func(array($this, $controller_method));
-		}
-		else
-		{
-			$this->response->status = 404;
-			return;
-		}
+		call_user_func(array($this, $controller_method));
 	}
 
 	/*
@@ -90,25 +81,25 @@ abstract class Controller_Rest extends \Controller {
 	{
 		if (empty($data))
 		{
-			$this->response->status = 404;
+			\Output::$status = 404;
 			return;
 		}
 
-		$this->response->status = $http_code;
+		\Output::$status = $http_code;
 
 		// If the format method exists, call and return the output in that format
-		if (method_exists('Format', 'to_'.$this->request->format))
+		if (method_exists('Controller_Rest', '_format_' . $this->request->format))
 		{
 			// Set the correct format header
-			$this->response->set_header('Content-Type: '.$this->_supported_formats[$this->request->format]);
+			\Output::set_header('Content-Type', $this->_supported_formats[$this->request->format]);
 
-			$this->response->body(Format::factory($data)->{'to_'.$this->request->format}());
+			$this->output = $this->{'_format_' . $this->request->format}($data);
 		}
 
 		// Format not supported, output directly
 		else
 		{
-			$this->response->body((string) $data);
+			$this->output = (string) $data;
 		}
 	}
 
@@ -327,12 +318,191 @@ abstract class Controller_Rest extends \Controller {
 	private function _force_loopable($data)
 	{
 		// Force it to be something useful
-		if ( ! is_array($data) and ! is_object($data))
+		if (!is_array($data) and !is_object($data))
 		{
 			$data = (array) $data;
 		}
 
 		return $data;
+	}
+
+	// FORMATING FUNCTIONS ---------------------------------------------------------
+	// Format XML for output
+	private function _format_xml($data = array(), $structure = null, $basenode = 'xml')
+	{
+		// turn off compatibility mode as simple xml throws a wobbly if you don't.
+		if (ini_get('zend.ze1_compatibility_mode') == 1)
+		{
+			ini_set('zend.ze1_compatibility_mode', 0);
+		}
+
+		if ($structure == null)
+		{
+			$structure = simplexml_load_string("<?xml version='1.0' encoding='utf-8'?><$basenode />");
+		}
+
+		// loop through the data passed in.
+		$data = self::_force_loopable($data);
+		foreach ($data as $key => $value)
+		{
+			// no numeric keys in our xml please!
+			if (is_numeric($key))
+			{
+				// make string key...
+				//$key = "item_". (string) $key;
+				$key = "item";
+			}
+
+			// replace anything not alpha numeric
+			$key = preg_replace('/[^a-z_]/i', '', $key);
+
+			// if there is another array found recrusively call this function
+			if (is_array($value) or is_object($value))
+			{
+				$node = $structure->addChild($key);
+				// recrusive call.
+				self:: _format_xml($value, $node, $basenode);
+			}
+			else
+			{
+				// Actual boolean values need to be converted to numbers
+				is_bool($value) and $value = (int) $value;
+
+				// add single node.
+				$value = htmlentities($value, ENT_NOQUOTES, "UTF-8");
+
+				$UsedKeys[] = $key;
+
+				$structure->addChild($key, $value);
+			}
+		}
+
+		// pass back as string. or simple xml object if you want!
+		return $structure->asXML();
+	}
+
+	// Format Raw XML for output
+	private function _format_rawxml($data = array(), $structure = null, $basenode = 'xml')
+	{
+		// turn off compatibility mode as simple xml throws a wobbly if you don't.
+		if (ini_get('zend.ze1_compatibility_mode') == 1)
+		{
+			ini_set('zend.ze1_compatibility_mode', 0);
+		}
+
+		if ($structure == null)
+		{
+			$structure = simplexml_load_string("<?xml version='1.0' encoding='utf-8'?><$basenode />");
+		}
+
+		// loop through the data passed in.
+		$data = self::_force_loopable($data);
+		foreach ($data as $key => $value)
+		{
+			// no numeric keys in our xml please!
+			if (is_numeric($key))
+			{
+				// make string key...
+				//$key = "item_". (string) $key;
+				$key = "item";
+			}
+
+			// replace anything not alpha numeric
+			$key = preg_replace('/[^a-z0-9_-]/i', '', $key);
+
+			// if there is another array found recrusively call this function
+			if (is_array($value) or is_object($value))
+			{
+				$node = $structure->addChild($key);
+				// recrusive call.
+				self::_format_rawxml($value, $node, $basenode);
+			}
+			else
+			{
+				// Actual boolean values need to be converted to numbers
+				is_bool($value) and $value = (int) $value;
+
+				// add single node.
+				$value = htmlentities($value, ENT_NOQUOTES, "UTF-8");
+
+				$UsedKeys[] = $key;
+
+				$structure->addChild($key, $value);
+			}
+		}
+
+		// pass back as string. or simple xml object if you want!
+		return $structure->asXML();
+	}
+
+	// Format HTML for output
+//	private function _format_html($data = array())
+//	{
+//		// Multi-dimentional array
+//		if (isset($data[0]))
+//		{
+//			$headings = array_keys($data[0]);
+//		}
+//
+//		// Single array
+//		else
+//		{
+//			$headings = array_keys($data);
+//			$data = array($data);
+//		}
+//
+//		self::load->library('table');
+//
+//		self::table->set_heading($headings);
+//
+//		foreach($data as &$row)
+//		{
+//			self::table->add_row($row);
+//		}
+//
+//		return self::table->generate();
+//	}
+	// Format HTML for output
+	private function _format_csv($data = array())
+	{
+		// Multi-dimentional array
+		if (isset($data[0]))
+		{
+			$headings = array_keys($data[0]);
+		}
+
+		// Single array
+		else
+		{
+			$headings = array_keys($data);
+			$data = array($data);
+		}
+
+		$output = implode(',', $headings) . "\r\n";
+		foreach ($data as &$row)
+		{
+			$output .= '"' . implode('","', $row) . "\"\r\n";
+		}
+
+		return $output;
+	}
+
+	// Encode as JSON
+	private function _format_json($data = array())
+	{
+		return json_encode($data);
+	}
+
+	// Encode as Serialized array
+	private function _format_serialize($data = array())
+	{
+		return serialize($data);
+	}
+
+	// Encode raw PHP
+	private function _format_php($data = array())
+	{
+		return var_export($data, true);
 	}
 
 }

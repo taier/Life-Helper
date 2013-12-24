@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -207,7 +207,7 @@ class Validation {
 	 */
 	public function run($input = null, $allow_partial = false)
 	{
-		if (empty($input) && \Input::method() != 'POST')
+		if (empty($input) && empty($_POST))
 		{
 			return false;
 		}
@@ -228,7 +228,8 @@ class Validation {
 				foreach ($field->rules as $rule)
 				{
 					$callback	= $rule[0];
-					$params		= $rule[1];
+					$params		= empty($rule[1]) ? array(null) : $rule[1];
+
 					$this->_run_rule($callback, $value, $params, $field);
 				}
 				$this->validated[$field->name] = $value;
@@ -255,7 +256,7 @@ class Validation {
 	 */
 	protected function _run_rule($rule, &$value, $params, $field)
 	{
-		$output = call_user_func_array($rule, array_merge(array($value), $params));
+		$output = call_user_func_array($rule, array_merge(array($value), $params, array($this)));
 
 		if ($output === false && $value !== false)
 		{
@@ -338,11 +339,11 @@ class Validation {
 	public function show_errors($options = array())
 	{
 		$default = array(
-			'open_list'    => \Config::get('validation.open_list', '<ul>'),
-			'close_list'   => \Config::get('validation.close_list', '</ul>'),
-			'open_error'   => \Config::get('validation.open_error', '<li>'),
-			'close_error'  => \Config::get('validation.close_error', '</li>'),
-			'no_errors'    => \Config::get('validation.no_errors', '')
+			'open_list' => '<ul>',
+			'close_list' => '</ul>',
+			'open_error' => '<li>',
+			'close_error' => '</li>',
+			'no_errors' => ''
 		);
 		$options = array_merge($default, $options);
 

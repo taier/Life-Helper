@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Auth;
@@ -32,7 +32,7 @@ abstract class Auth_Acl_Driver extends \Auth_Driver {
 		// default driver id to driver name when not given
 		! array_key_exists('id', $config) && $config['id'] = $config['driver'];
 
-		$class = \Inflector::get_namespace($config['driver']).'Auth_Acl_'.ucfirst(\Inflector::denamespace($config['driver']));
+		$class = 'Auth_Acl_'.ucfirst($config['driver']);
 		$driver = new $class($config);
 		static::$_instances[$driver->get_id()] = $driver;
 

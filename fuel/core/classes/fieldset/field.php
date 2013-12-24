@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
+ * @package		Fuel
+ * @version		1.0
+ * @author		Fuel Development Team
+ * @license		MIT License
+ * @copyright	2010 - 2011 Fuel Development Team
+ * @link		http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -87,7 +87,6 @@ class Fieldset_Field
 	{
 		$this->name = (string) $name;
 		$this->fieldset = $fieldset;
-		isset($attributes['options']) and  $this->set_options($attributes['options']);
 
 		// Don't allow name in attributes
 		unset($attributes['name']);
@@ -119,7 +118,7 @@ class Fieldset_Field
 	 */
 	public function set_label($label)
 	{
-		$this->label = $label;
+		$this->label = (string) $label;
 		$this->set_attribute('label', $label);
 	}
 
