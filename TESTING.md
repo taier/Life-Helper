@@ -130,3 +130,22 @@ All tests should extend the **Fuel\Core\TestCase** class.
 
     }
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
