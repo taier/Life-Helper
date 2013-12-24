@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?php
 /**
  * Fuel
@@ -149,27 +148,4 @@ return array(
 	) // end forms
 );
 
-=======
-<?php
-/**
- * Fuel
- *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package    Fuel
- * @version    1.0
- * @author     Fuel Development Team
- * @license    MIT License
- * @copyright  2010 - 2011 Fuel Development Team
- * @link       http://fuelphp.com
- */
-
-return array(
-	'form_template'			=> "\t\t{form_open}\n{fields}\n\t\t{form_close}\n",
-	'field_template'		=> "\t\t\t{label} {field}\n",
-	'multi_field_template'	=> "{fields}\t\t\t{label}{required} {field}{fields}",
-	'required_mark'			=> '*',
-);
-
->>>>>>> 14df450602dd4bcf5892cf4ca20a9537ceb7848f
 /* End of file form.php */
