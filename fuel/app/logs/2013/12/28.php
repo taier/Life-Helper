@@ -28,3 +28,5 @@ Error - 2013-12-28 10:39:42 --> 2048 - Non-static method Fuel\Core\Migrate::_upd
 Error - 2013-12-28 10:39:42 --> Error - Class 'Model_Orm_Location' not found in /Applications/MAMP/htdocs/Life Helper/fuel/app/migrations/002_demo_data.php on line 12
 Error - 2013-12-28 10:49:43 --> Error - Class 'Fuel\Core\Exception' not found in /Applications/MAMP/htdocs/Life Helper/fuel/core/classes/migrate.php on line 174
 Error - 2013-12-28 10:49:56 --> Error - Class 'Fuel\Core\Exception' not found in /Applications/MAMP/htdocs/Life Helper/fuel/core/classes/migrate.php on line 174
+Error - 2013-12-28 10:51:02 --> 2048 - Non-static method Fuel\Core\Migrate::_update_schema_version() should not be called statically in /Applications/MAMP/htdocs/Life Helper/fuel/core/classes/migrate.php on line 210
+Error - 2013-12-28 10:51:26 --> 2048 - Non-static method Fuel\Core\Migrate::_update_schema_version() should not be called statically in /Applications/MAMP/htdocs/Life Helper/fuel/core/classes/migrate.php on line 210
