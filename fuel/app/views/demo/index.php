@@ -15,17 +15,24 @@
 </head>
 
 <div id="wrapper">
-		<h1>REVIEW SECTION</h1>
+		<h1>DEMO SECTION</h1>
 		<div id="content">
+
+			<li><?php echo Html::anchor('users/login', 'Login'); ?></li>
+			
 			<p>You have successfully came to this page</p>
 	
 			<p>Controller of this page located at</p>
 
-			<pre><code>APPPATH/classes/controller/review.php</code></pre>
+			<pre><code>APPPATH/classes/controller/demo.php</code></pre>
+
+			<p>Setting variables and other stuff for this page happend in </p>
+
+			<pre><code>action_index()</code></pre>
 
 			<p>View of this page located at </p>
 			
-			<pre><code>APPPATH/views/review/review.php</code></pre>
+			<pre><code>APPPATH/views/demo/index.php</code></pre>
 		
 			<p></p>
 		</div>

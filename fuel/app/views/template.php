@@ -25,6 +25,9 @@
     <li><?php echo Html::anchor('users/login', 'Login'); ?></li>
     <li><?php echo Html::anchor('users/signup', 'Sign Up'); ?></li>
     <?php endif; ?>
+    <li><?php echo Html::anchor('review/index', 'Review'); ?></li>
+</br>
+    <li><?php echo Html::anchor('demo/index', 'DEMO PAGE'); ?></li>
 </ul>
 
 			<?php if (Session::get_flash('success')): ?>

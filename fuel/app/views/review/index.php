@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,31 +13,27 @@
 		a { color: #000; }
 	</style>
 </head>
-<body>
-	<div id="wrapper">
-		<h1>FUEL Beta</h1>
-		
+
+<div id="wrapper">
+		<h1>REVIEW SECTION</h1>
 		<div id="content">
+
 			<li><?php echo Html::anchor('users/login', 'Login'); ?></li>
-			
-			<p>You have successfully installed the Fuel PHP Framework.</p>
+
+			<p>You have successfully came to this page</p>
 	
-			<p>Your default controller, 'Controller_Welcome' is located at:</p>
+			<p>Controller of this page located at</p>
 
-			<pre><code>APPPATH/classes/controller/welcome.php</code></pre>
+			<pre><code>APPPATH/classes/controller/review.php</code></pre>
 
-			<p>The Controller_Welcome is using the view:</p>
+			<p>Setting variables and other stuff for this page happend in </p>
+
+			<pre><code>action_index()</code></pre>
+
+			<p>View of this page located at </p>
 			
-			<pre><code>APPPATH/views/welcome/index.php</code></pre>
+			<pre><code>APPPATH/views/review/index.php</code></pre>
 		
 			<p></p>
 		</div>
-		<div id="footer">
-			<p>
-				<a href="http://fuelphp.com">Fuel PHP</a> is released under the MIT license.<br />
-				Executed in {exec_time}s using {mem_usage}mb of memory.
-			</p>
-		</div>
-	</div>
-</body>
-</html>
+</div>
