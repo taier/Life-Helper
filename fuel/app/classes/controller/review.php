@@ -35,14 +35,21 @@ public function before()
     {
     	$data = Model_Data::find($this->user_id);
 		$users = Model_Users::find($this->user_id);
+
     	$this->template->name = $users->username;
     	$this->template->email = $users->email;
-    	$this->template->title = "Awsome title";
-    	$this->template->text = "Losts of words";
-		$this->template->title = "Awsome title";
-		$this->template->template = "Awsome Template";
-		$this->template->date = "Awsome date";
-		$this->template->public = "Maybe";
+    	$this->template->title = $data->title;
+    	$this->template->text = $data->text;
+		
+		if($data->template == 1) {
+			$this->template->template = "Productivity";
+		}
+
+		$this->template->date = $data->date;
+
+		if($data->template == 1) {
+			$this->template->public = "Maybe";
+		}
 
        $this->template->content = View::factory('review/index');
     }

@@ -27,12 +27,29 @@ class Create_users {
 		    'date' => array('type' => 'datetime'),
 			'public'=> array('constraint' => 11, 'type' => 'int'),
 			), array('id'));
-	}
 
+
+	$datas = \Model_Data::factory(array(
+            'id' => 1,
+            'email' => 'doesnt@realy.matter',
+            'title' => 'It is my first time',
+            'text' => 'I am so glad that it works', 
+            'template' => '1',
+            'date' => '2012-07-08 11:14:15.638276',
+            'public' => '1',
+        ));
+
+        if ($datas and $datas->save()) {
+            \Cli::write("Added ");
+        } else {
+            \Cli::write("Some shit happend");
+        }
+
+	}
 
 	function down()
 	{
 		\DBUtil::drop_table('users');
-		\DBUtil::drop_table('data');
+		\DBUtil::drop_table('datas');
 	}
 }
