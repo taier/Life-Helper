@@ -35,7 +35,6 @@ public function before()
     {
 	$users = Model_Users::find($this->user_id);
     	$this->template->name = $users->username;
-    	//$this->template->name = "Awsome name";
     	$this->template->email = $users->email;
     	$this->template->title = "Awsome title";
     	$this->template->text = "Losts of words";
