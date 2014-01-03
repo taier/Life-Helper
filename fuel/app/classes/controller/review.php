@@ -33,7 +33,8 @@ public function before()
 
 	public function action_index()
     {
-	$users = Model_Users::find($this->user_id);
+    	$data = Model_Data::find($this->user_id);
+		$users = Model_Users::find($this->user_id);
     	$this->template->name = $users->username;
     	$this->template->email = $users->email;
     	$this->template->title = "Awsome title";

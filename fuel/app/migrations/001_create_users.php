@@ -18,7 +18,7 @@ class Create_users {
 
 		), array('id'));
 
-	\DBUtil::create_table('data', array(
+	\DBUtil::create_table('datas', array(
 			'id' => array('constraint' => 11, 'type' => 'int', 'auto_increment' => true),
 			'email' => array('constraint' => 70, 'type' => 'varchar'),
 			'title' => array('constraint' => 255, 'type' => 'varchar'),
