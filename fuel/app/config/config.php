@@ -179,6 +179,7 @@ return array(
 		// reserved routes.
 		'#'		=> 'users',
 		'404'	=> 'welcome/404',
+		'review' =>'review/review',
 	),
 );
 
