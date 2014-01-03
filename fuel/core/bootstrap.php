@@ -73,6 +73,7 @@ Fuel\Core\Autoloader::add_classes(array(
 	'Fuel\\Core\\Controller'				=> COREPATH.'classes/controller.php',
 	'Fuel\\Core\\Controller_Rest'			=> COREPATH.'classes/controller/rest.php',
 	'Fuel\\Core\\Controller_Template'		=> COREPATH.'classes/controller/template.php',
+	'Fuel\\Core\\Controller_Template_Review'		=> COREPATH.'classes/controller/template_review.php',
 	'Fuel\\Core\\Cookie'					=> COREPATH.'classes/cookie.php',
 
 	'Fuel\\Core\\DB'						=> COREPATH.'classes/db.php',

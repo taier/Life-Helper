@@ -19,7 +19,7 @@
 		<div id="content">
 <ul class="nav">
     <?php if ( $logged_in ): ?>
-    <li><?php echo Html::anchor('users/logout', 'Logout'); ?></li>
+    <li><?php echo Html::anchor('users/logout', 'Log Out'); ?></li>
     <li><?php echo Html::anchor('users', 'users'); ?></li>
     <?php else: ?>
     <li><?php echo Html::anchor('users/login', 'Login'); ?></li>
