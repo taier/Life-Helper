@@ -15,8 +15,9 @@
 <body>
 	<div id="wrapper">
 		<h1>REVIEW SECTION</h1>
-
+		<li><?php echo Html::anchor('selectionscreen/index', 'Back'); ?></li>
 		<li><?php echo Html::anchor('users/logout', 'Log Out'); ?></li>
+
 
 		<p>Hey <b> <?php echo $name ?> </b>, how's it going?</p>
 

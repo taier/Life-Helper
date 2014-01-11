@@ -6,9 +6,10 @@ class Controller_Users extends Controller_Common {
     }
 	public function action_index()
 	{
-		$data['users'] = Model_Users::find('all');
-		$this->template->title = "Users";
-		$this->template->content = View::factory('users/index', $data);
+		//$data['users'] = Model_Users::find('all');
+		//$this->template->title = "Users";
+		//$this->template->content = View::factory('users/index', $data);
+		Output::redirect('selectionscreen');
 	}
 	public function action_login()
     {
@@ -26,7 +27,7 @@ class Controller_Users extends Controller_Common {
             if($auth->login($val->validated('username'), $val->validated('password')))
             {
                 Session::set_flash('notice', 'FLASH: logged in');
-                Output::redirect('users');
+                Output::redirect('selectionscreen/index');
             }
             else
             {
@@ -76,7 +77,7 @@ class Controller_Users extends Controller_Common {
             if( $create_user )
             {
                 Session::set_flash('notice', 'FLASH: User created.');
-                Output::redirect('users');
+                Output::redirect('login');
             }
             else
             {
@@ -101,10 +102,11 @@ class Controller_Users extends Controller_Common {
 	}
 	public function action_view($id = null)
 	{
-		$data['users'] = Model_Users::find($id);
+		// $data['users'] = Model_Users::find($id);
 		
-		$this->template->title = "Users";
-		$this->template->content = View::factory('users/view', $data);
+		// $this->template->title = "Users";
+		// $this->template->content = View::factory('users/view', $data);
+		Output::redirect('selectionscreen');
 	}
 	
 	public function action_create($id = null)

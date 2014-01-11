@@ -17,23 +17,9 @@
 <div id="wrapper">
 		<h1>WRITE SECTION</h1>
 		<div id="content">
-
-			<li><?php echo Html::anchor('users/login', 'Log Out'); ?></li>
-
-			<p>You have successfully came to this page</p>
-	
-			<p>Controller of this page located at</p>
-
-			<pre><code>APPPATH/classes/controller/write.php</code></pre>
-
-			<p>Setting variables and other stuff for this page happend in </p>
-
-			<pre><code>action_index()</code></pre>
-
-			<p>View of this page located at </p>
-			
-			<pre><code>APPPATH/views/write/index.php</code></pre>
-		
-			<p></p>
+		<ul>
+			<li><?php echo Html::anchor('selectionscreen/index', 'Back'); ?></li>
+			<li><?php echo Html::anchor('users/logout', 'Log Out'); ?></li>
+		</ul>
 		</div>
 </div>
