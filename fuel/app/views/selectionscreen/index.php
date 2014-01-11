@@ -15,8 +15,8 @@
 </head>
 
 <div id="wrapper">
-		<h1>Review Screen</h1>
+		<h1>Selection Screen</h1>
 		<div id="content">
-
+ 		<li><?php echo Html::anchor('review/index', 'Review'); ?></li>
 		</div>
 </div>

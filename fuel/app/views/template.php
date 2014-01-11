@@ -26,6 +26,7 @@
     <li><?php echo Html::anchor('users/signup', 'Sign Up'); ?></li>
     <?php endif; ?>
     <li><?php echo Html::anchor('review/index', 'Review'); ?></li>
+    <li><?php echo Html::anchor('selectionscreen/index', 'Selection Screen'); ?></li>
 </br>
     <li><?php echo Html::anchor('demo/index', 'DEMO PAGE'); ?></li>
 </ul>
