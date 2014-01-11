@@ -2,7 +2,7 @@
 /**
  * An example Controller.  This shows the most basic usage of a Controller.
  */
-class Controller_Write extends Controller{
+class Controller_templates extends Controller{
 
 
 public function before()
@@ -31,9 +31,9 @@ public function before()
     }
 
 
- public function action_index()
+ public function action_template1()
     {
-      $this->render('write/index');
+      $this->render('templates/template1');
     }
 
 }
