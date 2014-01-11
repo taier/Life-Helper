@@ -15,14 +15,25 @@
 </head>
 
 <div id="wrapper">
-		<h1>Selection Screen</h1>
+		<h1>WRITE SECTION</h1>
 		<div id="content">
- 		<li><?php echo Html::anchor('review/index', 'Review'); ?></li>
-		</div>
-</div>
 
-<div id="wrapper">
-		<div id="content">
- 		<li><?php echo Html::anchor('write/index', 'Write'); ?></li>
+			<li><?php echo Html::anchor('users/login', 'Log Out'); ?></li>
+
+			<p>You have successfully came to this page</p>
+	
+			<p>Controller of this page located at</p>
+
+			<pre><code>APPPATH/classes/controller/write.php</code></pre>
+
+			<p>Setting variables and other stuff for this page happend in </p>
+
+			<pre><code>action_index()</code></pre>
+
+			<p>View of this page located at </p>
+			
+			<pre><code>APPPATH/views/write/index.php</code></pre>
+		
+			<p></p>
 		</div>
 </div>
