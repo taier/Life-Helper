@@ -23,6 +23,6 @@
 
 <div id="wrapper">
 		<div id="content">
- 		<li><?php echo Html::anchor('write/index', 'Write'); ?></li>
+ 		<li><?php echo Html::anchor('templates/index', 'Write'); ?></li>
 		</div>
 </div>

@@ -30,10 +30,24 @@ public function before()
         }
     }
 
+    public function action_index() {
 
- public function action_template1()
-    {
-      $this->render('templates/template1');
+        $this->render('templates/index');
+    }
+
+    public function action_productivity()  {
+
+      $this->render('templates/productivity');
+    }
+
+      public function action_inspiration()  {
+
+      $this->render('templates/inspiration');
+    }
+
+      public function action_free()  {
+
+      $this->render('templates/free');
     }
 
 }
