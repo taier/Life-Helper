@@ -4,6 +4,11 @@
  */
 class Controller_templates extends Controller{
 
+  public function before() {
+    if ( !Auth::has_access('write.create') ) {
+      Response::redirect("welcome/index");
+    }
+  }
 
     public function action_index() {
 

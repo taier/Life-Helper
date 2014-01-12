@@ -18,7 +18,7 @@
   <div id="content">
   <ul>  
     <li><?php echo Html::anchor('selectionscreen/index', 'Back'); ?></li>
-    <li><?php echo Html::anchor('users/logout', 'Log Out'); ?></li>
+    <li><?php echo Html::anchor('account/logout', 'Log Out'); ?></li>
   </br>
     <li><?php echo Html::anchor('templates/productivity', 'Productivity'); ?></li>
     <li><?php echo Html::anchor('templates/inspiration', 'Inspiration'); ?></li>
