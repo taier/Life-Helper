@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -19,11 +17,12 @@ namespace Fuel\Core;
  *
  * A base controller for easily creating templated output.
  *
- * @package		Fuel
- * @category	Core
- * @author		Fuel Development Team
+ * @package   Fuel
+ * @category  Core
+ * @author    Fuel Development Team
  */
-abstract class Controller_Template extends \Controller {
+abstract class Controller_Template extends \Controller
+{
 
 	/**
 	* @var string page template
@@ -31,32 +30,33 @@ abstract class Controller_Template extends \Controller {
 	public $template = 'template';
 
 	/**
-	* @var boolean auto render template
-	**/
-	public $auto_render = true;
-
-	// Load the template and create the $this->template object
+	 * Load the template and create the $this->template object
+	 */
 	public function before()
 	{
-		if ($this->auto_render === true)
+		if ( ! empty($this->template) and is_string($this->template))
 		{
 			// Load the template
-			$this->template = \View::factory($this->template);
+			$this->template = \View::forge($this->template);
 		}
 
 		return parent::before();
 	}
 
-	// After contorller method has run output the template
-	public function after()
+	/**
+	 * After controller method has run output the template
+	 *
+	 * @param  Response  $response
+	 */
+	public function after($response)
 	{
-		if ($this->auto_render === true)
+		// If nothing was returned default to the template
+		if ($response === null)
 		{
-			$this->output = $this->template;
+			$response = $this->template;
 		}
 
-		return parent::after();
+		return parent::after($response);
 	}
 
 }
-/* End of file template.php */

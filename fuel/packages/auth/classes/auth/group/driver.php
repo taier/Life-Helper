@@ -4,18 +4,19 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Auth;
 
 
-abstract class Auth_Group_Driver extends \Auth_Driver {
+abstract class Auth_Group_Driver extends \Auth_Driver
+{
 
 	/**
 	 * @var	Auth_Driver
@@ -27,14 +28,15 @@ abstract class Auth_Group_Driver extends \Auth_Driver {
 	 */
 	protected static $_instances = array();
 
-	public static function factory(Array $config = array())
+	public static function forge(array $config = array())
 	{
 		// default driver id to driver name when not given
 		! array_key_exists('id', $config) && $config['id'] = $config['driver'];
 
-		$class = 'Auth_Group_'.ucfirst($config['driver']);
+		$class = \Inflector::get_namespace($config['driver']).'Auth_Group_'.\Str::ucwords(\Inflector::denamespace($config['driver']));
 		$driver = new $class($config);
 		static::$_instances[$driver->get_id()] = $driver;
+		is_null(static::$_instance) and static::$_instance = $driver;
 
 		foreach ($driver->get_config('drivers', array()) as $type => $drivers)
 		{
@@ -43,8 +45,8 @@ abstract class Auth_Group_Driver extends \Auth_Driver {
 				$custom = is_int($d)
 					? array('driver' => $custom)
 					: array_merge($custom, array('driver' => $d));
-				$class = 'Auth_'.ucfirst($type).'_Driver';
-				$class::factory($custom);
+				$class = 'Auth_'.\Str::ucwords($type).'_Driver';
+				$class::forge($custom);
 			}
 		}
 
@@ -86,11 +88,11 @@ abstract class Auth_Group_Driver extends \Auth_Driver {
 		foreach (\Auth::verified() as $v)
 		{
 			// ... and check all those their groups
-			$gs = $v->get_user_groups();
+			$gs = $v->get_groups();
 			foreach ($gs as $g_id)
 			{
 				// ... and try to validate if its group is this one
-				if ($this instanceof $g_id[0])
+				if ($this->id = $g_id[0])
 				{
 					if ($this->has_access($condition, $driver, $g_id))
 					{

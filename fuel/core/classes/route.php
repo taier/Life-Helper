@@ -1,116 +1,159 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
+class Route
+{
 
+	/**
+	 * @var  array  segments array
+	 */
+	public $segments = array();
 
-class Route {
+	/**
+	 * @var  array  named params array
+	 */
+	public $named_params = array();
 
-	public static $routes = array();
+	/**
+	 * @var  array  method params array
+	 */
+	public $method_params = array();
 
-	public static function load_routes($reload = false)
+	/**
+	 * @var  string  route path
+	 */
+	public $path = '';
+
+	/**
+	 * @var  boolean  route case match behaviour
+	 */
+	public $case_sensitive = false;
+
+	/**
+	 * @var  boolean  wether to strip the extension from the URI
+	 */
+	public $strip_extension = true;
+
+	/**
+	 * @var  string  route module
+	 */
+	public $module = null;
+
+	/**
+	 * @var  string  route directory
+	 */
+	public $directory = null;
+
+	/**
+	 * @var  string  controller name
+	 */
+	public $controller = null;
+
+	/**
+	 * @var  string  default controller action
+	 */
+	public $action = 'index';
+
+	/**
+	 * @var  mixed  route translation
+	 */
+	public $translation = null;
+
+	/**
+	 * @var  closure
+	 */
+	public $callable = null;
+
+	/**
+	 * @var  mixed  the compiled route regex
+	 */
+	protected $search = null;
+
+	public function __construct($path, $translation = null, $case_sensitive = null, $strip_extension = null)
 	{
-		if (\Config::load('config', null, $reload))
-		{
-			static::$routes = \Config::get('routes');
-		}
-		elseif ( ! $reload)
-		{
-			static::$routes = \Config::get('routes');
-		}
+		$this->path = $path;
+		$this->translation = ($translation === null) ? $path : $translation;
+		$this->search = ($translation == stripslashes($path)) ? $path : $this->compile();
+		$this->case_sensitive = ($case_sensitive === null) ? \Config::get('routing.case_sensitive', true) : $case_sensitive;
+		$this->strip_extension = ($strip_extension === null) ? \Config::get('routing.strip_extension', true) : $strip_extension;
 	}
 
 	/**
-	 * Attemptes to find the correct route for the given URI
+	 * Compiles a route. Replaces named params and regex shortcuts.
+	 *
+	 * @return  string  compiled route.
+	 */
+	protected function compile()
+	{
+		if ($this->path === '_root_')
+		{
+			return '';
+		}
+
+		$search = str_replace(array(
+			':any',
+			':alnum',
+			':num',
+			':alpha',
+			':segment',
+		), array(
+			'.+',
+			'[[:alnum:]]+',
+			'[[:digit:]]+',
+			'[[:alpha:]]+',
+			'[^/]*',
+		), $this->path);
+
+		return preg_replace('#(?<!\[\[):([a-z\_]+)(?!:\]\])#uD', '(?P<$1>.+?)', $search);
+	}
+
+	/**
+	 * Attempts to find the correct route for the given URI
 	 *
 	 * @access	public
 	 * @param	object	The URI object
 	 * @return	array
 	 */
-	public static function parse($uri, $reload = false)
+	public function parse(\Request $request)
 	{
-		static::load_routes($reload);
+		$uri = $request->uri->get();
+		$method = $request->get_method();
 
-		// This handles the default route
-		if ($uri->uri == '')
+		if ($uri === '' and $this->path === '_root_')
 		{
-			if ( ! isset(static::$routes['#']) || static::$routes['#'] == '')
-			{
-				// TODO: write logic to deal with missing default route.
-				return false;
-			}
-			else
-			{
-				return static::parse_match(static::$routes['#']);
-			}
+			return $this->matched();
 		}
 
-		foreach (static::$routes as $search => $route)
-		{
-			$result = static::_parse_search($uri, $search, $route);
+		$result = $this->_parse_search($uri, null, $method);
 
-			if ($result)
-			{
-				return $result;
-			}
+		if ($result)
+		{
+			return $result;
 		}
 
-		return static::parse_match($uri->uri);
-	}
-
-	/**
-	 * Parse module routes
-	 *
-	 * This first adds the given routes to the current loaded routes and then
-	 * reparses the given uri.
-	 *
-	 * @param	string	current module name
-	 * @param	array	new routes
-	 * @param	string	uri to reparse
-	 * @return	array	parsed routing info
-	 */
-	public static function parse_module($module, Array $routes, $current_uri)
-	{
-		// Load module routes and add to router
-		foreach ($routes as $uri => $route)
-		{
-			$prefix = in_array($uri, array('404')) ? '' : $module.'/';
-			static::$routes[$prefix.$uri] = $prefix.$route;
-		}
-
-		// Reroute with module routes
-		$route = static::parse($current_uri);
-		// Remove first segment, that's the module
-		array_shift($route['segments']);
-
-		return $route;
+		return false;
 	}
 
 	/**
 	 * Parses a route match and returns the controller, action and params.
 	 *
-	 * @access	protected
+	 * @access	public
 	 * @param	string	The matched route
-	 * @return	array
+	 * @return	object  $this
 	 */
-	public static function parse_match($route, $named_params = array())
+	public function matched($uri = '', $named_params = array())
 	{
-		$method_params = array();
-
-		$segments = explode('/', $route);
-
 		// Clean out all the non-named stuff out of $named_params
 		foreach($named_params as $key => $val)
 		{
@@ -120,37 +163,67 @@ class Route {
 			}
 		}
 
-		return array(
-			'uri'			=> $route,
-			'segments'		=> $segments,
-			'named_params'	=> $named_params,
-		);
+		$this->named_params = $named_params;
+
+		if ($this->translation instanceof \Closure)
+		{
+			$this->callable = $this->translation;
+		}
+		else
+		{
+			$path = $this->translation;
+
+			if ($uri != '')
+			{
+				// strip the extension if needed and there is something to strip
+				if ($this->strip_extension and strrchr($uri, '.') == $ext = '.'.\Input::extension())
+				{
+					$uri = substr($uri, 0, -(strlen($ext)));
+				}
+
+				if ($this->case_sensitive)
+				{
+					$path = preg_replace('#^'.$this->search.'$#uD', $this->translation, $uri);
+				}
+				else
+				{
+					$path = preg_replace('#^'.$this->search.'$#uiD', $this->translation, $uri);
+				}
+			}
+
+			$this->segments = explode('/', trim($path, '/'));
+		}
+
+		return $this;
 	}
 
 	/**
 	 * Parses an actual route - extracted out of parse() to make it recursive.
 	 *
-	 * @access private
-	 * @param string The URI object
-	 * @param string The search string
-	 * @param string The route to check for routing to
-	 * @return array OR boolean
+	 * @param   string  The URI object
+	 * @param   object  route object
+	 * @param   string  request method
+	 * @return  array|boolean
 	 */
-	private static function _parse_search($uri, $search, $route)
+	protected function _parse_search($uri, $route = null, $method = null)
 	{
-		$search = str_replace(array(':any', ':segment'), array('.+', '[^/]+([^/]*)'), $search);
-		$search = preg_replace('|:([a-z\_]+)|uD', '(?P<$1>.+)', $search);
-
-		if (is_array($route))
+		if ($route === null)
 		{
-			foreach ($route as $r)
+			$route = $this;
+		}
+
+		if (is_array($route->translation))
+		{
+			foreach ($route->translation as $r)
 			{
 				$verb = $r[0];
-				$forward = $r[1];
 
-				if (\Input::method() == strtoupper($verb))
+				$protocol = isset($r[2]) ? ($r[2] ? 'https' : 'http') : false;
+
+				if (($protocol === false or $protocol == \Input::protocol()) and $method == strtoupper($verb))
 				{
-					$result = static::_parse_search($uri, $search, $forward);
+					$r[1]->search = $route->search;
+					$result = $route->_parse_search($uri, $r[1], $method);
 
 					if ($result)
 					{
@@ -162,11 +235,18 @@ class Route {
 			return false;
 		}
 
-		if (preg_match('@^'.$search.'$@uD', $uri->uri, $params) != false)
+		if ($this->case_sensitive)
 		{
-			$route = preg_replace('@^'.$search.'$@uD', $route, $uri->uri);
+			$result = preg_match('#^'.$route->search.'$#uD', $uri, $params);
+		}
+		else
+		{
+			$result = preg_match('#^'.$route->search.'$#uiD', $uri, $params);
+		}
 
-			return static::parse_match($route, $params);
+		if ($result === 1)
+		{
+			return $route->matched($uri, $params);
 		}
 		else
 		{
@@ -174,5 +254,3 @@ class Route {
 		}
 	}
 }
-
-/* End of file route.php */

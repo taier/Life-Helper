@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -18,7 +16,8 @@ namespace Fuel\Core;
 
 // --------------------------------------------------------------------
 
-class Session_Redis extends Session_Driver {
+class Session_Redis extends \Session_Driver
+{
 
 	/**
 	 * array of driver config defaults
@@ -59,7 +58,7 @@ class Session_Redis extends Session_Driver {
 		if ($this->redis === false)
 		{
 			// get the redis database instance
-			$this->redis = \Redis::instance($this->config['database']);
+			$this->redis = \Redis_Db::instance($this->config['database']);
 		}
 	}
 
@@ -69,23 +68,19 @@ class Session_Redis extends Session_Driver {
 	 * create a new session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_Redis
 	 */
 	public function create()
 	{
 		// create a new session
 		$this->keys['session_id']	= $this->_new_session_id();
 		$this->keys['previous_id']	= $this->keys['session_id'];	// prevents errors if previous_id has a unique index
-		$this->keys['ip_address']	= \Input::real_ip();
+		$this->keys['ip_hash']		= md5(\Input::ip().\Input::real_ip());
 		$this->keys['user_agent']	= \Input::user_agent();
 		$this->keys['created'] 		= $this->time->get_timestamp();
 		$this->keys['updated'] 		= $this->keys['created'];
 
-		// create the session record
-		$this->_write_redis($this->keys['session_id'], serialize(array()));
-
-		// and set the session cookie
-		$this->_set_cookie();
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -95,63 +90,73 @@ class Session_Redis extends Session_Driver {
 	 *
 	 * @access	public
 	 * @param	boolean, set to true if we want to force a new session to be created
-	 * @return	void
+	 * @return	Fuel\Core\Session_Driver
 	 */
 	public function read($force = false)
 	{
+		// initialize the session
+		$this->data = array();
+		$this->keys = array();
+		$this->flash = array();
+
 		// get the session cookie
 		$cookie = $this->_get_cookie();
 
-		// if no session cookie was present, create it
-		if ($cookie === false or $force)
+		// if a cookie was present, find the session record
+		if ($cookie and ! $force and isset($cookie[0]))
 		{
-			$this->create();
-		}
-
-		// read the session file
-		$payload = $this->_read_redis($this->keys['session_id']);
-
-		if ($payload === false)
-		{
-			// try to find the previous one
-			$payload = $this->_read_redis($this->keys['previous_id']);
+			// read the session file
+			$payload = $this->_read_redis($cookie[0]);
 
 			if ($payload === false)
 			{
 				// cookie present, but session record missing. force creation of a new session
-				$this->read(true);
-				return;
+				return $this->read(true);
 			}
-		}
 
-		// unpack the payload
-		$payload = $this->_unserialize($payload);
+			// unpack the payload
+			$payload = $this->_unserialize($payload);
 
-		// session referral?
-		if (isset($payload['rotated_session_id']))
-		{
-			$payload = $this->_read_redis($payload['rotated_session_id']);
-			if ($payload === false)
+			// session referral?
+			if (isset($payload['rotated_session_id']))
 			{
-				// cookie present, but session record missing. force creation of a new session
-				$this->read(true);
-				return;
-			}
-			else
-			{
-				// update the session
-				$this->keys['previous_id'] = $this->keys['session_id'];
-				$this->keys['session_id'] = $payload['rotated_session_id'];
+				$payload = $this->_read_redis($payload['rotated_session_id']);
+				if ($payload === false)
+				{
+					// cookie present, but session record missing. force creation of a new session
+					return $this->read(true);
+				}
 
 				// unpack the payload
 				$payload = $this->_unserialize($payload);
 			}
+
+			if ( ! isset($payload[0]) or ! is_array($payload[0]))
+			{
+				// not a valid cookie payload
+			}
+			elseif ($payload[0]['updated'] + $this->config['expiration_time'] <= $this->time->get_timestamp())
+			{
+				// session has expired
+			}
+			elseif ($this->config['match_ip'] and $payload[0]['ip_hash'] !== md5(\Input::ip().\Input::real_ip()))
+			{
+				// IP address doesn't match
+			}
+			elseif ($this->config['match_ua'] and $payload[0]['user_agent'] !== \Input::user_agent())
+			{
+				// user agent doesn't match
+			}
+			else
+			{
+				// session is valid, retrieve the rest of the payload
+				if (isset($payload[0]) and is_array($payload[0])) $this->keys  = $payload[0];
+				if (isset($payload[1]) and is_array($payload[1])) $this->data  = $payload[1];
+				if (isset($payload[2]) and is_array($payload[2])) $this->flash = $payload[2];
+			}
 		}
 
-		if (isset($payload[0])) $this->data = $payload[0];
-		if (isset($payload[1])) $this->flash = $payload[1];
-
-		parent::read();
+		return parent::read();
 	}
 
 	// --------------------------------------------------------------------
@@ -160,34 +165,39 @@ class Session_Redis extends Session_Driver {
 	 * write the session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_Redis
 	 */
 	public function write()
 	{
 		// do we have something to write?
-		if ( ! empty($this->keys))
+		if ( ! empty($this->keys) or ! empty($this->data) or ! empty($this->flash))
 		{
 			parent::write();
 
 			// rotate the session id if needed
 			$this->rotate(false);
 
+			// record the last update time of the session
+			$this->keys['updated'] = $this->time->get_timestamp();
+
 			// session payload
-			$payload = $this->_serialize(array($this->data, $this->flash));
+			$payload = $this->_serialize(array($this->keys, $this->data, $this->flash));
 
 			// create the session file
 			$this->_write_redis($this->keys['session_id'], $payload);
 
 			// was the session id rotated?
-			if ( isset($this->keys['previous_id']) && $this->keys['previous_id'] != $this->keys['session_id'])
+			if ( isset($this->keys['previous_id']) and $this->keys['previous_id'] != $this->keys['session_id'])
 			{
 				// point the old session file to the new one, we don't want to lose the session
 				$payload = $this->_serialize(array('rotated_session_id' => $this->keys['session_id']));
 				$this->_write_redis($this->keys['previous_id'], $payload);
 			}
 
-			$this->_set_cookie();
+			$this->_set_cookie(array($this->keys['session_id']));
 		}
+
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -196,7 +206,7 @@ class Session_Redis extends Session_Driver {
 	 * destroy the current session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_Redis
 	 */
 	public function destroy()
 	{
@@ -207,8 +217,9 @@ class Session_Redis extends Session_Driver {
 			$this->redis->del($this->keys['session_id']);
 		}
 
-		// reset the stored session data
-		$this->keys = $this->flash = $this->data = array();
+		parent::destroy();
+
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -221,12 +232,9 @@ class Session_Redis extends Session_Driver {
 	 */
 	protected function _write_redis($session_id, $payload)
 	{
-		// session payload
-		$payload = $this->_serialize(array($this->data, $this->flash));
-
 		// write it to the redis server
-		$this->redis->set($this->keys['session_id'], $payload);
-		$this->redis->expire($this->keys['session_id'], $this->config['expiration_time']);
+		$this->redis->set($session_id, $payload);
+		$this->redis->expire($session_id, $this->config['expiration_time']);
 	}
 
 	// --------------------------------------------------------------------
@@ -239,8 +247,8 @@ class Session_Redis extends Session_Driver {
 	 */
 	protected function _read_redis($session_id)
 	{
-		// fetch the session data from the Memcached server
-		return $this->redis->get($this->keys['session_id']);
+		// fetch the session data from the redis server
+		return $this->redis->get($session_id);
 	}
 
 	// --------------------------------------------------------------------
@@ -264,7 +272,7 @@ class Session_Redis extends Session_Driver {
 				switch ($item)
 				{
 					case 'cookie_name':
-						if ( empty($item) OR ! is_string($item))
+						if ( empty($item) or ! is_string($item))
 						{
 							$item = 'fuelrid';
 						}
@@ -272,7 +280,7 @@ class Session_Redis extends Session_Driver {
 
 					case 'database':
 						// do we have a servers config
-						if ( empty($item) OR ! is_array($item))
+						if ( empty($item) or ! is_array($item))
 						{
 							$item = 'default';
 						}
@@ -293,4 +301,4 @@ class Session_Redis extends Session_Driver {
 
 }
 
-/* End of file redis.php */
+

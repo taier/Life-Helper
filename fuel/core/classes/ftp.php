@@ -1,18 +1,22 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
+
+
+class FtpConnectionException extends \FuelException {}
+
+class FtpFileAccessException extends \FuelException {}
+
 
 /**
  * FTP Class
@@ -20,32 +24,33 @@ namespace Fuel\Core;
  * @package		Fuel
  * @category	Core
  * @author		Phil Sturgeon
- * @link		http://fuelphp.com/docs/classes/ftp.html
+ * @link		http://docs.fuelphp.com/classes/ftp.html
  */
 class Ftp
 {
 	public static $initialized = false;
 
-	protected $_hostname		= 'localhost';
-	protected $_username		= '';
-	protected $_password		= '';
-	protected $_port			= 21;
-	protected $_passive		= true;
-	protected $_debug		= false;
-	protected $_conn_id		= false;
+	protected $_hostname  = 'localhost';
+	protected $_username  = '';
+	protected $_password  = '';
+	protected $_port      = 21;
+	protected $_timeout   = 90;
+	protected $_passive   = true;
+	protected $_debug     = false;
+	protected $_conn_id   = false;
 
 	/**
 	 * Returns a new Ftp object. If you do not define the "file" parameter,
 	 *
-	 *     $ftp = static::factory('group');
+	 *     $ftp = static::forge('group');
 	 *
-	 * @param   string  Ftp filename
-	 * @param   array   array of values
+	 * @param   string|array  The name of the config group to use, or a configuration array.
+	 * @param   bool          Automatically connect to this server.
 	 * @return  Ftp
 	 */
-	public static function factory($config = 'default', $connect = true)
+	public static function forge($config = 'default', $connect = true)
 	{
-		$ftp = new Ftp($config);
+		$ftp = new static($config);
 
 		// Unless told not to, connect automatically
 		$connect === true and $ftp->connect();
@@ -56,8 +61,8 @@ class Ftp
 	/**
 	 * Sets the initial Ftp filename and local data.
 	 *
-	 * @param   string  Ftp filename
-	 * @param   array   array of values
+	 * @param   string|array  The name of the config group to use, or a configuration array.
+	 * @param   bool          Automatically connect to this server.
 	 * @return  void
 	 */
 	public function __construct($config = 'default')
@@ -72,7 +77,7 @@ class Ftp
 			// Check that it exists
 			if ( ! is_array($config_arr) or $config_arr === array())
 			{
-				throw new \Fuel_Exception('You have specified an invalid ftp connection group: '.$config);
+				throw new \UnexpectedValueException('You have specified an invalid ftp connection group: '.$config);
 			}
 
 			$config = $config_arr;
@@ -82,10 +87,11 @@ class Ftp
 		$this->_hostname = preg_replace('|.+?://|', '', $config['hostname']);
 		$this->_username = $config['username'];
 		$this->_password = $config['password'];
-		$this->_port = ! empty($config['port']) ? (int) $config['port'] : 21;
-		$this->_passive = (bool) $config['passive'];
+		$this->_timeout  = ! empty($config['timeout']) ? (int) $config['timeout'] : 90;
+		$this->_port     = ! empty($config['port']) ? (int) $config['port'] : 21;
+		$this->_passive  = (bool) $config['passive'];
 		$this->_ssl_mode = (bool) $config['ssl_mode'];
-		$this->_debug = (bool) $config['debug'];
+		$this->_debug    = (bool) $config['debug'];
 
 		static::$initialized = true;
 	}
@@ -105,22 +111,22 @@ class Ftp
 		{
 			if( ! function_exists('ftp_ssl_connect'))
 			{
-				throw new Exception('ftp_ssl_connect() is missing.');
+				throw new \RuntimeException('ftp_ssl_connect() function is missing.');
 			}
 
-			$this->_conn_id = @ftp_ssl_connect($this->_hostname, $this->_port);
+			$this->_conn_id = @ftp_ssl_connect($this->_hostname, $this->_port, $this->_timeout);
 		}
 
 		else
 		{
-			$this->_conn_id = @ftp_connect($this->_hostname, $this->_port);
+			$this->_conn_id = @ftp_connect($this->_hostname, $this->_port, $this->_timeout);
 		}
 
 		if ($this->_conn_id === false)
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_connect');
+				throw new \FtpConnectionException('Unable to establish a connection');
 			}
 			return false;
 		}
@@ -129,7 +135,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_login');
+				throw new \FtpConnectionException('Unable to login');
 			}
 		}
 
@@ -147,10 +153,9 @@ class Ftp
 	/**
 	 * FTP Login
 	 *
-	 * @access	private
 	 * @return	bool
 	 */
-	private function _login()
+	protected function _login()
 	{
 		return @ftp_login($this->_conn_id, $this->_username, $this->_password);
 	}
@@ -160,16 +165,15 @@ class Ftp
 	/**
 	 * Validates the connection ID
 	 *
-	 * @access	private
 	 * @return	bool
 	 */
-	private function _is_conn()
+	protected function _is_conn()
 	{
 		if ( ! is_resource($this->_conn_id))
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_no_connection');
+				throw new \InvalidArgumentException('Invalid connection');
 			}
 			return false;
 		}
@@ -206,7 +210,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_change_dir');
+				throw new \FtpFileAccessException('Unable to change the directory');
 			}
 			return false;
 		}
@@ -236,7 +240,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_makdir');
+				throw new \FtpFileAccessException('Unable to create directory');
 			}
 			return false;
 		}
@@ -268,9 +272,9 @@ class Ftp
 			return false;
 		}
 
-		if ( ! file_exists($local_path))
+		if ( ! is_file($local_path))
 		{
-			throw new \Fuel_Exception('ftp_no_source_file');
+			throw new \FtpFileAccessException('No source file');
 			return false;
 		}
 
@@ -290,7 +294,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_upload');
+				throw new \FtpFileAccessException('Unable to upload');
 			}
 			return false;
 		}
@@ -338,7 +342,7 @@ class Ftp
 		{
 			if ($this->_debug === true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_download');
+				throw new \FtpFileAccessException('Unable to download');
 			}
 			return false;
 		}
@@ -370,9 +374,9 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				$msg = ($move == false) ? 'ftp_unable_to_rename' : 'ftp_unable_to_move';
+				$msg = ($move == false) ? 'Unable to rename' : 'Unable to move';
 
-				throw new \Fuel_Exception($msg);
+				throw new \FtpFileAccessException($msg);
 			}
 			return false;
 		}
@@ -417,7 +421,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_delete');
+				throw new \FtpFileAccessException('Unable to delete');
 			}
 			return false;
 		}
@@ -466,7 +470,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_delete');
+				throw new \FtpFileAccessException('Unable to delete');
 			}
 			return false;
 		}
@@ -496,7 +500,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_chmod');
+				throw new \FtpFileAccessException('CHMOD function does not exist');
 			}
 			return false;
 		}
@@ -507,7 +511,7 @@ class Ftp
 		{
 			if ($this->_debug == true)
 			{
-				throw new \Fuel_Exception('ftp_unable_to_chmod');
+				throw new \FtpFileAccessException('Unable to CHMOD');
 			}
 			return false;
 		}
@@ -570,14 +574,14 @@ class Ftp
 			// Recursively read the local directory
 			while (false !== ($file = readdir($fp)))
 			{
-				if (@is_dir($local_path.$file) && substr($file, 0, 1) != '.')
+				if (@is_dir($local_path.$file) and substr($file, 0, 1) != '.')
 				{
 					$this->mirror($local_path.$file."/", $remote_path.$file."/");
 				}
 				elseif (substr($file, 0, 1) != ".")
 				{
 					// Get the file extension so we can se the upload type
-					$ext = $this->_getext($file);
+					$ext = pathinfo($file, PATHINFO_EXTENSION);
 					$mode = $this->_settype($ext);
 
 					$this->upload($local_path.$file, $remote_path.$file, $mode);
@@ -594,11 +598,10 @@ class Ftp
 	/**
 	 * Set the upload type
 	 *
-	 * @access	private
 	 * @param	string
 	 * @return	string
 	 */
-	private function _settype($ext)
+	protected function _settype($ext)
 	{
 		$text_types = array(
 			'txt',
@@ -652,4 +655,3 @@ class Ftp
 
 }
 
-/* End of file ftp.php */

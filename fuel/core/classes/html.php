@@ -1,14 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Dan Horrigan <http://dhorrigan.com>
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -24,25 +23,12 @@ namespace Fuel\Core;
  * @subpackage	Core
  * @category	Core
  * @author		Alfredo Rivera
- * @link		http://fuelphp.com/docs/classes/html.html
+ * @link		http://docs.fuelphp.com/classes/html.html
  */
 class Html
 {
-	public static $doctypes = array();
-	public static $html5 = false;
-
-	/**
-	 * Generates a html heading tag
-	 *
-	 * @param	string			heading text
-	 * @param	int				1 through 6 for h1-h6
-	 * @param	array|string	tag attributes
-	 * @return	string
-	 */
-	public static function h($content = '', $num = 1, $attr = false)
-	{
-		return html_tag('h'.$num, $attr, $content);
-	}
+	public static $doctypes = null;
+	public static $html5 = true;
 
 	/**
 	 * Creates an html link
@@ -50,19 +36,32 @@ class Html
 	 * @param	string	the url
 	 * @param	string	the text value
 	 * @param	array	the attributes array
+	 * @param	bool	true to force https, false to force http
 	 * @return	string	the html link
 	 */
-	public static function anchor($href, $text, $attr = array())
+	public static function anchor($href, $text = null, $attr = array(), $secure = null)
 	{
-		if ( ! preg_match('#^(\w+://|javascript:)# i', $href))
+		if ( ! preg_match('#^(\w+://|javascript:|\#)# i', $href))
 		{
-			$href = \Uri::create($href);
+			$urlparts = explode('?', $href, 2);
+			$href = \Uri::create($urlparts[0], array(), isset($urlparts[1])?$urlparts[1]:array(), $secure);
 		}
+		elseif ( ! preg_match('#^(javascript:|\#)# i', $href) and is_bool($secure))
+		{
+			$href = http_build_url($href, array('scheme' => $secure ? 'https' : 'http'));
+
+			// Trim the trailing slash
+			$href = rtrim($href, '/');
+		}
+
+		// Create and display a URL hyperlink
+		is_null($text) and $text = $href;
+
 		$attr['href'] = $href;
 
 		return html_tag('a', $attr, $text);
 	}
-	
+
 	/**
 	 * Creates an html image tag
 	 *
@@ -76,7 +75,7 @@ class Html
 	{
 		if ( ! preg_match('#^(\w+://)# i', $src))
 		{
-			$src = \Uri::create($src);
+			$src = \Uri::base(false).$src;
 		}
 		$attr['src'] = $src;
 		$attr['alt'] = (isset($attr['alt'])) ? $attr['alt'] : pathinfo($src, PATHINFO_FILENAME);
@@ -108,7 +107,7 @@ class Html
 	 * @param	string	The subject
 	 * @return	string	The mailto link
 	 */
-	public static function mail_to($email, $text = NULL, $subject = NULL, $attr = array())
+	public static function mail_to($email, $text = null, $subject = null, $attr = array())
 	{
 		$text or $text = $email;
 
@@ -129,7 +128,7 @@ class Html
 	 * @param	array	attributes for the tag
 	 * @return	string	the javascript code containg email
 	 */
-	public static function mail_to_safe($email, $text, $subject = null, $attr = array())
+	public static function mail_to_safe($email, $text = null, $subject = null, $attr = array())
 	{
 		$text or $text = str_replace('@', '[at]', $email);
 
@@ -141,57 +140,14 @@ class Html
 		$attr = ($attr == '' ? '' : ' ').$attr;
 
 		$output = '<script type="text/javascript">';
+		$output .= '(function() {';
 		$output .= 'var user = "'.$email[0].'";';
 		$output .= 'var at = "@";';
 		$output .= 'var server = "'.$email[1].'";';
 		$output .= "document.write('<a href=\"' + 'mail' + 'to:' + user + at + server + '$subject\"$attr>$text</a>');";
+		$output .= '})();';
 		$output .= '</script>';
 		return $output;
-	}
-
-	/**
-	 * Generates a html break tag
-	 *
-	 * @param	int				number of times to repeat the br
-	 * @param	array|string	tag attributes
-	 * @return	string
-	 */
-	public static function br($num = 1, $attr = false)
-	{
-		return str_repeat(html_tag('br', $attr), $num);
-	}
-
-	/**
-	 * Generates a html horizontal rule tag
-	 *
-	 * @param	array|string	tag attributes
-	 * @return	string
-	 */
-	public static function hr($attr = false)
-	{
-		return html_tag('hr', $attr);
-	}
-
-	/**
-	 * Generates a html title tag
-	 *
-	 * @param	string	page title
-	 * @return	string
-	 */
-	public static function title($content = '')
-	{
-		return html_tag('title', array(), $content);
-	}
-
-	/**
-	 * Generates a ascii code for non-breaking whitespaces
-	 *
-	 * @param	int		number of times to repeat
-	 * @return	string
-	 */
-	public static function nbs($num = 1)
-	{
-		return str_repeat('&nbsp;', $num);
 	}
 
 	/**
@@ -228,9 +184,13 @@ class Html
 	 */
 	public static function doctype($type = 'xhtml1-trans')
 	{
-		\Config::load('doctypes', true);
-		static::$doctypes = \Config::get('doctypes');
-		if(is_array(static::$doctypes) && isset(static::$doctypes[$type]))
+		if(static::$doctypes === null)
+		{
+			\Config::load('doctypes', true);
+			static::$doctypes = \Config::get('doctypes', array());
+		}
+
+		if(is_array(static::$doctypes) and isset(static::$doctypes[$type]))
 		{
 			if($type == "html5")
 			{
@@ -245,25 +205,6 @@ class Html
 	}
 
 	/**
-	 * Generates a html5 header tag or div with id "header"
-	 *
-	 * @param	string	header content
-	 * @param	array	tag attributes
-	 * @return	string
-	 */
-	public static function header($content = '', $attr = array())
-	{
-		if(static::$html5)
-		{
-			return html_tag('header', $attr, $content);
-		}
-		else
-		{
-			return html_tag('div', array_merge(array('id' => 'header'), $attr), $content);
-		}
-	}
-
-	/**
 	 * Generates a html5 audio tag
 	 * It is required that you set html5 as the doctype to use this method
 	 *
@@ -271,12 +212,13 @@ class Html
 	 * @param	array			tag attributes
 	 * @return	string
 	 */
-	public static function audio($src = array(), $attr = false)
+	public static function audio($src = '', $attr = false)
 	{
 		if(static::$html5)
 		{
 			if(is_array($src))
 			{
+				$source = '';
 				foreach($src as $item)
 				{
 					$source .= html_tag('source', array('src' => $item));
@@ -297,7 +239,7 @@ class Html
 	 * @param	array|string	outer list attributes
 	 * @return	string
 	 */
-	public static function ul(Array $list = array(), $attr = false)
+	public static function ul(array $list = array(), $attr = false)
 	{
 		return static::build_list('ul', $list, $attr);
 	}
@@ -309,7 +251,7 @@ class Html
 	 * @param	array|string	outer list attributes
 	 * @return	string
 	 */
-	public static function ol(Array $list = array(), $attr = false)
+	public static function ol(array $list = array(), $attr = false)
 	{
 		return static::build_list('ol', $list, $attr);
 	}
@@ -323,7 +265,7 @@ class Html
 	 * @param	string	indentation
 	 * @return	string
 	 */
-	protected static function build_list($type = 'ul', Array $list = array(), $attr = false, $indent = '')
+	protected static function build_list($type = 'ul', array $list = array(), $attr = false, $indent = '')
 	{
 		if ( ! is_array($list))
 		{
@@ -346,4 +288,3 @@ class Html
 		return $result;
 	}
 }
-/* End of file html.php */

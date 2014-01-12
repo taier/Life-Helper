@@ -5,49 +5,41 @@
 class Controller_templates extends Controller{
 
 
-public function before()
-    {
-        parent::before();
-        $uri_string = explode('/', Uri::string());
-
-        if (count($uri_string)>1 and $uri_string[0] == 'users' and ($uri_string[1] == 'login' or $uri_string[1] == 'signup'))
-        {
-          
-        }
-        else
-        {
-            if(\Auth::check())
-            {
-                $user = \Auth::instance()->get_user_id();
-                $this->user_id = $user[1];
-            
-            }
-            else
-            {
-               
-                \Output::redirect('/users/login');
-            }
-        }
-    }
-
     public function action_index() {
 
-        $this->render('templates/index');
+      return View::forge('templates/index');
     }
 
     public function action_productivity()  {
-
-      $this->render('templates/productivity');
+       return View::forge('templates/productivity');
     }
 
       public function action_inspiration()  {
-
-      $this->render('templates/inspiration');
+        return View::forge('templates/inspiration');
     }
 
       public function action_free()  {
 
-      $this->render('templates/free');
+        if (Input::method() == 'POST') {
+          $date = new DateTime();
+          $date->setTimezone(new DateTimeZone('Europe/Riga'));
+          $realDate = $date->format('Y-m-d H:i:sP');
+          $val = Model_Orm_Datas::validate('create');
+          $datas = Model_Orm_Datas::forge(
+             array(
+              'email' => "helloworld@ololo.com",
+              'title' => "My first ololo",
+              'text' => Input::post("text"),
+              'template' => "1",
+              'date' => $realDate,
+              'public' =>'1'
+              ));
+
+    if($datas->save()) {
+      Response::redirect('templates/index');
+    }
+  }
+        return View::forge('templates/free');
     }
 
 }

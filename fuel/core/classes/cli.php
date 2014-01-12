@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -22,9 +20,12 @@ namespace Fuel\Core;
  * @package		Fuel
  * @category	Core
  * @author		Phil Sturgeon
- * @link		http://fuelphp.com/docs/classes/cli.html
+ * @link		http://docs.fuelphp.com/classes/cli.html
  */
-class Cli {
+class Cli
+{
+
+	public static $readline_support = false;
 
 	public static $wait_msg = 'Press any key to continue...';
 
@@ -34,6 +35,7 @@ class Cli {
 		'black'			=> '0;30',
 		'dark_gray'		=> '1;30',
 		'blue'			=> '0;34',
+		'dark_blue'		=> '1;34',
 		'light_blue'	=> '1;34',
 		'green'			=> '0;32',
 		'light_green'	=> '1;32',
@@ -43,7 +45,7 @@ class Cli {
 		'light_red'		=> '1;31',
 		'purple'		=> '0;35',
 		'light_purple'	=> '1;35',
-		'brown'			=> '0;33',
+		'light_yellow'	=> '0;33',
 		'yellow'		=> '1;33',
 		'light_gray'	=> '0;37',
 		'white'			=> '1;37',
@@ -65,9 +67,9 @@ class Cli {
 	 */
 	public static function _init()
 	{
-		if ( ! IS_CLI)
+		if ( ! \Fuel::$is_cli)
 		{
-			throw new Exception('Cli class cannot be used outside of the command line.');
+			throw new \Exception('Cli class cannot be used outside of the command line.');
 		}
 		for ($i = 1; $i < $_SERVER['argc']; $i++)
 		{
@@ -80,6 +82,10 @@ class Cli {
 				static::$args[ltrim($arg[0], '-')] = isset($arg[1]) ? $arg[1] : true;
 			}
 		}
+
+		// Readline is an extension for PHP that makes interactive with PHP much more bash-like
+		// http://www.php.net/manual/en/readline.installation.php
+		static::$readline_support = extension_loaded('readline');
 	}
 
 	/**
@@ -89,89 +95,175 @@ class Cli {
 	 * Named options must be in the following formats:
 	 * php index.php user -v --v -name=John --name=John
 	 *
-	 * @param	string|int	$name	the name of the option (int if unnamed)
-	 * @return	string
+	 * @param   string|int  $name     the name of the option (int if unnamed)
+	 * @param   mixed       $default  value to return if the option is not defined
+	 * @return  mixed
 	 */
 	public static function option($name, $default = null)
 	{
 		if ( ! isset(static::$args[$name]))
 		{
-			return $default;
+			return \Fuel::value($default);
 		}
 		return static::$args[$name];
 	}
 
 	/**
-	 * Reads input from the user.  This can have either 1 or 2 arguments.
+	 * Allows you to set a commandline option from code
+	 *
+	 * @param   string|int  $name   the name of the option (int if unnamed)
+	 * @param   mixed|null  $value  value to set, or null to delete the option
+	 * @return  mixed
+	 */
+	public static function set_option($name, $value = null)
+	{
+		if ($value === null)
+		{
+			if (isset(static::$args[$name]))
+			{
+				unset(static::$args[$name]);
+			}
+		}
+		else
+		{
+			static::$args[$name] = $value;
+		}
+	}
+
+	/**
+	 * Get input from the shell, using readline or the standard STDIN
+	 *
+	 * Named options must be in the following formats:
+	 * php index.php user -v --v -name=John --name=John
+	 *
+	 * @param	string|int	$name	the name of the option (int if unnamed)
+	 * @return	string
+	 */
+	public static function input($prefix = '')
+	{
+        if (static::$readline_support)
+		{
+			return readline($prefix);
+		}
+
+		echo $prefix;
+		return fgets(STDIN);
+	}
+
+
+	/**
+	 * Asks the user for input.  This can have either 1 or 2 arguments.
 	 *
 	 * Usage:
 	 *
 	 * // Waits for any key press
-	 * CLI::read();
+	 * CLI::prompt();
 	 *
 	 * // Takes any input
-	 * $color = CLI::read('What is your favorite color?');
+	 * $color = CLI::prompt('What is your favorite color?');
+	 *
+	 * // Takes any input, but offers default
+	 * $color = CLI::prompt('What is your favourite color?', 'white');
 	 *
 	 * // Will only accept the options in the array
-	 * $ready = CLI::read('Are you ready?', array('y','n'));
+	 * $ready = CLI::prompt('Are you ready?', array('y','n'));
 	 *
 	 * @return	string	the user input
 	 */
-	public static function read()
+	public static function prompt()
 	{
 		$args = func_get_args();
 
-		// Ask question with options
-		if (count($args) == 2)
-		{
-			list($output, $options)=$args;
-		}
+		$options = array();
+		$output = '';
+		$default = null;
 
-		// No question (probably been asked already) so just show options
-		elseif (count($args) == 1 && is_array($args[0]))
-		{
-			$output = '';
-			$options = $args[0];
-		}
+		// How many we got
+		$arg_count = count($args);
 
-		// Question without options
-		elseif (count($args) == 1 && is_string($args[0]))
-		{
-			$output = $args[0];
-			$options = array();
-		}
+		// Is the last argument a boolean? True means required
+		$required = end($args) === true;
 
-		// Run out of ideas, EPIC FAIL!
-		else
+		// Reduce the argument count if required was passed, we don't care about that anymore
+		$required === true and --$arg_count;
+
+		// This method can take a few crazy combinations of arguments, so lets work it out
+		switch ($arg_count)
 		{
-			$output = '';
-			$options = array();
+			case 2:
+
+				// E.g: $ready = CLI::prompt('Are you ready?', array('y','n'));
+				if (is_array($args[1]))
+				{
+					list($output, $options)=$args;
+				}
+
+				// E.g: $color = CLI::prompt('What is your favourite color?', 'white');
+				elseif (is_string($args[1]))
+				{
+					list($output, $default)=$args;
+				}
+
+			break;
+
+			case 1:
+
+				// No question (probably been asked already) so just show options
+				// E.g: $ready = CLI::prompt(array('y','n'));
+				if (is_array($args[0]))
+				{
+					$options = $args[0];
+				}
+
+				// Question without options
+				// E.g: $ready = CLI::prompt('What did you do today?');
+				elseif (is_string($args[0]))
+				{
+					$output = $args[0];
+				}
+
+			break;
 		}
 
 		// If a question has been asked with the read
-		if( ! empty($output))
+		if ($output !== '')
 		{
-			$options_output = '';
-			if( ! empty($options))
+			$extra_output = '';
+
+			if ($default !== null)
 			{
-				$options_output = ' [ '.implode(', ', $options).' ]';
+				$extra_output = ' [ Default: "'.$default.'" ]';
 			}
 
-			fwrite(STDOUT, $output.$options_output.': ');
+			elseif ($options !== array())
+			{
+				$extra_output = ' [ '.implode(', ', $options).' ]';
+			}
+
+			fwrite(STDOUT, $output.$extra_output.': ');
 		}
 
 		// Read the input from keyboard.
-		$input = trim(fgets(STDIN));
+		$input = trim(static::input()) ?: $default;
 
-		// If options are provided and the choice is not in the array, tell them to try again
-		if( ! empty($options) && ! in_array($input, $options))
+		// No input provided and we require one (default will stop this being called)
+		if (empty($input) and $required === true)
 		{
-			static::write('This is not a valid option. Please try again.'.PHP_EOL);
+			static::write('This is required.');
+			static::new_line();
 
-			$input = static::read($output, $options);
+			$input = forward_static_call_array(array(__CLASS__, 'prompt'), $args);
 		}
 
-		// Read the input
+		// If options are provided and the choice is not in the array, tell them to try again
+		if ( ! empty($options) and ! in_array($input, $options))
+		{
+			static::write('This is not a valid option. Please try again.');
+			static::new_line();
+
+			$input = forward_static_call_array(array(__CLASS__, 'prompt'), $args);
+		}
+
 		return $input;
 	}
 
@@ -188,12 +280,32 @@ class Cli {
 			$text = implode(PHP_EOL, $text);
 		}
 
-		if ($foreground OR $background)
+		if ($foreground or $background)
 		{
 			$text = static::color($text, $foreground, $background);
 		}
 
 		fwrite(STDOUT, $text.PHP_EOL);
+	}
+
+	/**
+	 * Outputs an error to the CLI using STDERR instead of STDOUT
+	 *
+	 * @param	string|array	$text	the text to output, or array of errors
+	 */
+	public static function error($text = '', $foreground = 'light_red', $background = null)
+	{
+		if (is_array($text))
+		{
+			$text = implode(PHP_EOL, $text);
+		}
+
+		if ($foreground OR $background)
+		{
+			$text = static::color($text, $foreground, $background);
+		}
+
+		fwrite(STDERR, $text.PHP_EOL);
 	}
 
 	/**
@@ -237,46 +349,76 @@ class Cli {
 			else
 			{
 				static::write(static::$wait_msg);
-				static::read();
+				static::input();
 			}
 		}
 	}
 
 
 	/**
-	 * if oprerating system === windows
+	 * if operating system === windows
 	 */
  	public static function is_windows()
- 	{ 
+ 	{
  		return 'win' === strtolower(substr(php_uname("s"), 0, 3));
  	}
 
+	/**
+	 * Enter a number of empty lines
+	 *
+	 * @param	integer	Number of lines to output
+	 * @return	void
+	 */
+	public static function new_line($num = 1)
+	{
+        // Do it once or more, write with empty string gives us a new line
+        for($i = 0; $i < $num; $i++)
+		{
+			static::write();
+		}
+    }
+
+	/**
+	 * Clears the screen of output
+	 *
+	 * @return	void
+	 */
+    public static function clear_screen()
+    {
+		static::is_windows()
+
+			// Windows is a bit crap at this, but their terminal is tiny so shove this in
+			? static::new_line(40)
+
+			// Anything with a flair of Unix will handle these magic characters
+			: fwrite(STDOUT, chr(27)."[H".chr(27)."[2J");
+	}
 
 	/**
 	 * Returns the given text with the correct color codes for a foreground and
 	 * optionally a background color.
 	 *
 	 * @param	string	$text		the text to color
-	 * @param	atring	$foreground the foreground color
+	 * @param	string	$foreground the foreground color
 	 * @param	string	$background the background color
+	 * @param	string	$format		other formatting to apply. Currently only 'underline' is understood
 	 * @return	string	the color coded string
 	 */
-	public static function color($text, $foreground, $background = null)
+	public static function color($text, $foreground, $background = null, $format=null)
 	{
-	
-		if (static::is_windows())
+		if (static::is_windows() and ! \Input::server('ANSICON'))
 		{
 			return $text;
 		}
-		
+
 		if ( ! array_key_exists($foreground, static::$foreground_colors))
 		{
-			throw new \Fuel_Exception('Invalid CLI foreground color: '.$foreground);
+			throw new \FuelException('Invalid CLI foreground color: '.$foreground);
 		}
 
 		if ( $background !== null and ! array_key_exists($background, static::$background_colors))
 		{
-			throw new \Fuel_Exception('Invalid CLI background color: '.$background);
+			throw new \FuelException('Invalid CLI background color: '.$background);
 		}
 
 		$string = "\033[".static::$foreground_colors[$foreground]."m";
@@ -286,11 +428,39 @@ class Cli {
 			$string .= "\033[".static::$background_colors[$background]."m";
 		}
 
+		if ($format === 'underline')
+		{
+			$string .= "\033[4m";
+		}
+
 		$string .= $text."\033[0m";
 
 		return $string;
 	}
 
+	/**
+	* Spawn Background Process
+	*
+	* Launches a background process (note, provides no security itself, $call must be sanitised prior to use)
+	* @param string $call the system call to make
+	* @return void
+	* @author raccettura
+	* @link http://robert.accettura.com/blog/2006/09/14/asynchronous-processing-with-php/
+	*/
+	public static function spawn($call, $output = '/dev/null')
+	{
+		// Windows
+		if(static::is_windows())
+		{
+			pclose(popen('start /b '.$call, 'r'));
+	    }
+
+		// Some sort of UNIX
+		else
+		{
+			pclose(popen($call.' > '.$output.' &', 'r'));
+	    }
+	}
+
 }
 
-/* End of file cli.php */

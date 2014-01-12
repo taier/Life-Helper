@@ -1,22 +1,21 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
 
 
-class Cache_Handler_Json implements Cache_Handler_Driver {
+class Cache_Handler_Json implements \Cache_Handler_Driver
+{
 
 	public function readable($contents)
 	{
@@ -42,4 +41,4 @@ class Cache_Handler_Json implements Cache_Handler_Driver {
 	}
 }
 
-/* End of file json.php */
+

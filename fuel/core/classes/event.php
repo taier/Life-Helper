@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -22,179 +20,67 @@ namespace Fuel\Core;
  * @author		Eric Barnes
  * @author		Harro "WanWizard" Verton
  */
-class Event {
+abstract class Event
+{
+	/**
+	 * @var  array  $instances  Event_Instance container
+	 */
+	protected static $instances = array();
 
 	/**
-	 * @var	array	An array of listeners
-	 */
-	protected static $_events = array();
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Register
+	 * Event instance forge.
 	 *
-	 * Registers a Callback for a given event
-	 *
-	 * @access	public
-	 * @param	string	The name of the event
-	 * @param	mixed	callback information
-	 * @return	void
+	 * @param   array   $events  events array
+	 * @return  object  new Event_Instance instance
 	 */
-	public static function register()
+	public static function forge(array $events = array())
 	{
-		// get any arguments passed
-		$callback = func_get_args();
-
-		// if the arguments are valid, register the event
-		if (isset($callback[0]) && is_string($callback[0]) && isset($callback[1]) && is_callable($callback[1]))
-		{
-			// make sure we have an array for this event
-			isset(static::$_events[$callback[0]]) OR static::$_events[$callback[0]] = array();
-
-			// store the callback on the call stack
-			array_unshift(static::$_events[$callback[0]], $callback);
-
-			// and report success
-			return true;
-		}
-		else
-		{
-			// can't register the event
-			return false;
-		}
+		return new \Event_Instance($events);
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
-	 * Trigger
+	 * Multiton Event instance.
 	 *
-	 * Triggers an event and returns the results.  The results can be returned
-	 * in the following formats:
-	 *
-	 * 'array'
-	 * 'json'
-	 * 'serialized'
-	 * 'string'
-	 *
-	 * @access	public
-	 * @param	string	The name of the event
-	 * @param	mixed	Any data that is to be passed to the listener
-	 * @param	string	The return type
-	 * @return	mixed	The return of the listeners, in the return type
+	 * @param   string  $name    instance name
+	 * @param   array   $events  events array
+	 * @return  object  Event_Instance object
 	 */
-	public static function trigger($event, $data = '', $return_type = 'string')
+	public static function instance($name = 'fuelphp', array $events = array())
 	{
-		$calls = array();
-
-		// check if we have events registered
-		if (static::has_events($event))
+		if ( ! array_key_exists($name, static::$instances))
 		{
-			// process them
-			foreach (static::$_events[$event] as $arguments)
-			{
-				// get rid of the event name
-				array_shift($arguments);
-
-				// get the callback method
-				$callback = array_shift($arguments);
-
-				// call the callback event
-				if (is_callable($callback))
-				{
-					$calls[] = call_user_func($callback, $data, $arguments);
-				}
-			}
+			$events = array_merge(\Config::get('event.'.$name, array()), $events);
+			$instance = static::forge($events);
+			static::$instances[$name] = &$instance;
 		}
 
-		return static::_format_return($calls, $return_type);
+		return static::$instances[$name];
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
-	 * method called by register_shutdown_event
+	 * Static call forwarder
 	 *
-	 * @access	public
-	 * @param	void
-	 * @return	void
+	 * @param   string  $func  method name
+	 * @param   array   $args  passed arguments
+	 * @return
 	 */
-	public static function shutdown()
+	public static function __callStatic($func, $args)
 	{
-		if ( ! static::has_events('shutdown'))
-		{
-			return;
-		}
-		// shutdown events have to be executed in reverse order
-		static::$_events['shutdown'] = array_reverse(static::$_events['shutdown']);
+		$instance = static::instance();
 
-		// trigger the shutdown events
-		static::trigger('shutdown');
+		if (method_exists($instance, $func))
+		{
+			return call_fuel_func_array(array($instance, $func), $args);
+		}
+
+		throw new \BadMethodCallException('Call to undefined method: '.get_called_class().'::'.$func);
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
-	 * Has Listeners
-	 *
-	 * Checks if the event has listeners
-	 *
-	 * @access	public
-	 * @param	string	The name of the event
-	 * @return	bool	Whether the event has listeners
+	 * Load events config
 	 */
-	public static function has_events($event)
+	public static function _init()
 	{
-		if (isset(static::$_events[$event]) AND count(static::$_events[$event]) > 0)
-		{
-			return TRUE;
-		}
-		return FALSE;
-	}
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Format Return
-	 *
-	 * Formats the return in the given type
-	 *
-	 * @access	protected
-	 * @param	array	The array of returns
-	 * @param	string	The return type
-	 * @return	mixed	The formatted return
-	 */
-	protected static function _format_return(array $calls, $return_type)
-	{
-		switch ($return_type)
-		{
-			case 'array':
-				return $calls;
-				break;
-			case 'json':
-				return json_encode($calls);
-				break;
-			case 'none':
-				return;
-			case 'serialized':
-				return serialize($calls);
-				break;
-			case 'string':
-				$str = '';
-				foreach ($calls as $call)
-				{
-					$str .= $call;
-				}
-				return $str;
-				break;
-			default:
-				return $calls;
-				break;
-		}
-
-		return FALSE;
+		\Config::load('event', true);
 	}
 }
-
-/* End of file event.php */

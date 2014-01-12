@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -19,93 +17,51 @@ namespace Fuel\Core;
  *
  * @package		Fuel
  * @category	Core
- * @author		Harro "WanWizard" Verton
- * @link		http://fuelphp.com/docs/classes/upload.html
+ * @link		http://docs.fuelphp.com/classes/upload.html
  */
-class Upload {
+class Upload
+{
 
 	/* ---------------------------------------------------------------------------
 	 * ERROR CODE CONSTANTS
 	 * --------------------------------------------------------------------------- */
 
 	// duplicate the PHP standard error codes for consistency
-	const UPLOAD_ERR_OK						= UPLOAD_ERR_OK;
-	const UPLOAD_ERR_INI_SIZE				= UPLOAD_ERR_INI_SIZE;
-	const UPLOAD_ERR_FORM_SIZE				= UPLOAD_ERR_FORM_SIZE;
-	const UPLOAD_ERR_PARTIAL				= UPLOAD_ERR_PARTIAL;
-	const UPLOAD_ERR_NO_FILE				= UPLOAD_ERR_NO_FILE;
-	const UPLOAD_ERR_NO_TMP_DIR				= UPLOAD_ERR_NO_TMP_DIR;
-	const UPLOAD_ERR_CANT_WRITE				= UPLOAD_ERR_CANT_WRITE;
-	const UPLOAD_ERR_EXTENSION				= UPLOAD_ERR_EXTENSION;
+	const UPLOAD_ERR_OK         = UPLOAD_ERR_OK;
+	const UPLOAD_ERR_INI_SIZE   = UPLOAD_ERR_INI_SIZE;
+	const UPLOAD_ERR_FORM_SIZE  = UPLOAD_ERR_FORM_SIZE;
+	const UPLOAD_ERR_PARTIAL    = UPLOAD_ERR_PARTIAL;
+	const UPLOAD_ERR_NO_FILE    = UPLOAD_ERR_NO_FILE;
+	const UPLOAD_ERR_NO_TMP_DIR = UPLOAD_ERR_NO_TMP_DIR;
+	const UPLOAD_ERR_CANT_WRITE = UPLOAD_ERR_CANT_WRITE;
+	const UPLOAD_ERR_EXTENSION  = UPLOAD_ERR_EXTENSION;
 
 	// and add our own error codes
-	const UPLOAD_ERR_MAX_SIZE				= 101;
-	const UPLOAD_ERR_EXT_BLACKLISTED		= 102;
-	const UPLOAD_ERR_EXT_NOT_WHITELISTED	= 103;
-	const UPLOAD_ERR_TYPE_BLACKLISTED		= 104;
-	const UPLOAD_ERR_TYPE_NOT_WHITELISTED	= 105;
-	const UPLOAD_ERR_MIME_BLACKLISTED		= 106;
-	const UPLOAD_ERR_MIME_NOT_WHITELISTED	= 107;
-	const UPLOAD_ERR_MAX_FILENAME_LENGTH	= 108;
-	const UPLOAD_ERR_MOVE_FAILED			= 109;
-	const UPLOAD_ERR_DUPLICATE_FILE 		= 110;
+	const UPLOAD_ERR_MAX_SIZE             = 101;
+	const UPLOAD_ERR_EXT_BLACKLISTED      = 102;
+	const UPLOAD_ERR_EXT_NOT_WHITELISTED  = 103;
+	const UPLOAD_ERR_TYPE_BLACKLISTED     = 104;
+	const UPLOAD_ERR_TYPE_NOT_WHITELISTED = 105;
+	const UPLOAD_ERR_MIME_BLACKLISTED     = 106;
+	const UPLOAD_ERR_MIME_NOT_WHITELISTED = 107;
+	const UPLOAD_ERR_MAX_FILENAME_LENGTH  = 108;
+	const UPLOAD_ERR_MOVE_FAILED          = 109;
+	const UPLOAD_ERR_DUPLICATE_FILE       = 110;
+	const UPLOAD_ERR_MKDIR_FAILED         = 111;
+	const UPLOAD_ERR_FTP_FAILED           = 112;
 
 	/* ---------------------------------------------------------------------------
 	 * STATIC PROPERTIES
 	 * --------------------------------------------------------------------------- */
+	/**
+	 * @var object FuelPHP\Upload\Upload object
+	 */
+	protected static $upload = null;
 
 	/**
-	 * @var array default configuration values
+	 * @var object Ftp object
 	 */
-	protected static $_defaults = array(
-		'auto_process'		=> false,
-		// validation settings
-		'max_size'			=> 0,
-		'max_length'		=> 0,
-		'ext_whitelist'		=> array(),
-		'ext_blacklist'		=> array(),
-		'type_whitelist'	=> array(),
-		'type_blacklist'	=> array(),
-		'mime_whitelist'	=> array(),
-		'mime_blacklist'	=> array(),
-		// save settings
-		'path'				=> '',
-		'prefix'			=> '',
-		'suffix'			=> '',
-		'extension'			=> '',
-		'create_path'		=> true,
-		'path_chmod'		=> 0777,
-		'file_chmod'		=> 0666,
-		'auto_rename'		=> true,
-		'overwrite'			=> false,
-		'randomize'			=> false,
-		'normalize'			=> false,
-		'change_case'		=> false
-	);
-
-	/**
-	 * @var array defined callbacks
-	 */
-	protected static $callbacks = array(
-		'validate'	=> null,
-		'before'	=> null,
-		'after'		=> null
-	);
-
-	/**
-	 * @var array configuration of this instance
-	 */
-	protected static $config = array();
-
-	/**
-	 * @var array normalized $_FILES array
-	 */
-	protected static $files = array();
-
-	/**
-	 * @var bool indicator of valid uploads
-	 */
-	protected static $valid = false;
+	protected static $with_ftp = false;
 
 	/* ---------------------------------------------------------------------------
 	 * STATIC METHODS
@@ -118,13 +74,87 @@ class Upload {
 	 */
 	public static function _init()
 	{
+		// get the language file for this upload
+		\Lang::load('upload', true);
+
 		// get the config for this upload
 		\Config::load('upload', true);
 
-		// make sure we have defaults for those not defined
-		static::$config = array_merge(static::$_defaults, \Config::get('upload', array()));
+		// fetch the config
+		$config = \Config::get('upload', array());
 
-		static::$config['auto_process'] and self::process();
+		// add the language callback to link into Fuel's Lang class
+		$config['langCallback'] = '\\Upload::lang_callback';
+
+		// get an upload instance
+		if (class_exists('Fuel\Upload\Upload'))
+		{
+			static::$upload = new \Fuel\Upload\Upload($config);
+		}
+
+		// 1.6.1 fallback
+		elseif (class_exists('FuelPHP\Upload\Upload'))
+		{
+			static::$upload = new \FuelPHP\Upload\Upload($config);
+		}
+
+		else
+		{
+			throw new \FuelException('Can not load \Fuel\Upload\Upload. Did you run composer to install it?');
+		}
+
+		// if auto-process is not enabled, load the uploaded files
+		if ( ! $config['auto_process'])
+		{
+			static::$upload->processFiles();
+		}
+	}
+
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * return the Upload instance
+	 *
+	 * @return	\FuelPHP\Upload\Upload
+	 */
+	public static function instance()
+	{
+		return static::$upload;
+	}
+
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Lang callback function, translates Upload error messages
+	 *
+	 * @param  int  $error  Number of the error message we want the language string for
+	 *
+	 * @return  string  Language string retrieved
+	 */
+	public static function lang_callback($error)
+	{
+		return \Lang::get('upload.error_'.$error, array(), '');
+	}
+
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Move callback function, custom method to move an uploaded file. In Fuel 1.x
+	 * this method is used for FTP uploads only
+	 *
+	 * @param  string  $file  The FQFN of the file to move
+	 * @param  string  $file  The FQFN of the file destination
+	 *
+	 * @return  bool  Result of the move operation
+	 */
+	public static function move_callback($from, $to)
+	{
+		if (static::$with_ftp)
+		{
+			return static::$with_ftp->upload($from, $to, \Config::get('upload.ftp_mode'), \Config::get('upload.ftp_permissions'));
+		}
+
+		return false;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -136,7 +166,7 @@ class Upload {
 	 */
 	public static function is_valid()
 	{
-		return static::$valid;
+		return static::$upload->getValidFiles() == array() ? false : true;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -148,13 +178,39 @@ class Upload {
 	 */
 	public static function get_files($index = null)
 	{
-		if (is_null($index) or ! isset(static::$files[$index]))
+		// convert element name formats
+		is_string($index) and $index = str_replace(':', '.', $index);
+
+		$files = static::$upload->getValidFiles($index);
+
+		// convert the file object to 1.x compatible data
+		$result = array();
+
+		foreach ($files as $file)
 		{
-			return array_filter(static::$files, function($file) { return $file['error'] == 0; } );
+			$data = array();
+			foreach ($file as $item => $value)
+			{
+				$item == 'element' and $item = 'field';
+				$item == 'tmp_name' and $item = 'file';
+				$item == 'filename' and $item = 'saved_as';
+				$item == 'path' and $item = 'saved_to';
+				$data[$item] = $value;
+			}
+			$data['field'] = str_replace('.', ':', $data['field']);
+			$data['error'] = ! $file->isValid();
+			$data['errors'] = array();
+			$result[] = $data;
+		}
+
+		// compatibility with < 1.5, return the single entry if only one was found
+		if (func_num_args() and count($result) == 1)
+		{
+			return reset($result);
 		}
 		else
 		{
-			return static::$files[$index];
+			return $result;
 		}
 	}
 
@@ -167,13 +223,44 @@ class Upload {
 	 */
 	public static function get_errors($index = null)
 	{
-		if (is_null($index) or ! isset(static::$files[$index]) or $files[$index]['error'] == 0)
+		// convert element name formats
+		is_string($index) and $index = str_replace(':', '.', $index);
+
+		$files = static::$upload->getInvalidFiles($index);
+
+		// convert the file object to 1.x compatible data
+		$result = array();
+
+		foreach ($files as $file)
 		{
-			return array_filter(static::$files, function($file) { return $file['error'] != 0; } );
+			$data = array();
+			foreach ($file as $item => $value)
+			{
+				// swap item names for BC
+				$item == 'element' and $item = 'field';
+				$item == 'tmp_name' and $item = 'file';
+				$item == 'filename' and $item = 'saved_as';
+				$item == 'path' and $item = 'saved_to';
+				$data[$item] = $value;
+			}
+			$data['field'] = str_replace('.', ':', $data['field']);
+			$data['error'] = ! $file->isValid();
+			$data['errors'] = array();
+			foreach ($file->getErrors() as $error)
+			{
+				$data['errors'][] = array('error' => $error->getError(), 'message' => $error->getMessage());
+			}
+			$result[] = $data;
+		}
+
+		// compatibility with < 1.5, return the single entry if only one was found
+		if (func_num_args() and count($result) == 1)
+		{
+			return reset($result);
 		}
 		else
 		{
-			return static::$files[$index];
+			return $result;
 		}
 	}
 
@@ -184,191 +271,54 @@ class Upload {
 	 *
 	 * Registers a Callback for a given event
 	 *
-	 * @access	public
 	 * @param	string	The name of the event
 	 * @param	mixed	callback information
+	 *
 	 * @return	void
 	 */
-	public static function register()
+	public static function register($event, $callback)
 	{
-		// get any arguments passed
-		$callback = func_get_args();
+		// make sure we're setting the correct events
+		$event = str_replace(array('before', 'after', 'validate'), array('before_save', 'after_save', 'after_validation'), $event);
 
-		// if the arguments are valid, register the callback
-		if (isset($callback[0]) && is_string($callback[0]) && isset($callback[1]) && is_callable($callback[1]))
-		{
-			// make sure we have an entry for this callback
-			if (array_key_exists($callback[0], static::$callbacks))
-			{
-				static::$callbacks[array_shift($callback)] = $callback;
-
-				// report success
-				return true;
-			}
-		}
-
-		// can't register the callback
-		return false;
+		static::$upload->register($event, $callback);
 	}
 
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * Normalize the $_FILES array and store the result in $files
+	 * Process the uploaded files, and run the validation
 	 *
 	 * @return	void
 	 */
 	public static function process($config = array())
 	{
-		// process runtime config
-		if (is_array($config))
+		foreach (static::$upload->getAllFiles() as $file)
 		{
-			static::$config = array_merge(static::$config, $config);
+			$file->setConfig($config);
+			$file->validate();
 		}
+	}
 
-		// processed files array
-		static::$files = $files = array();
+	// ---------------------------------------------------------------------------
 
-		// normalize the $_FILES array
-		foreach($_FILES as $name => $value)
+	/**
+	 * Upload files with FTP
+	 *
+	 * @param   string|array  The name of the config group to use, or a configuration array.
+	 * @param   bool          Automatically connect to this server.
+	 */
+	public static function with_ftp($config = 'default', $connect = true)
+	{
+		if (static::$with_ftp = \Ftp::forge($config, $connect))
 		{
-			// if the variable is an array, flatten it
-			if (is_array($value['name']))
-			{
-				$keys = array_keys($value['name']);
-				foreach ($keys as $key)
-				{
-					// skip this entry if no file was uploaded
-					if ($value['error'][$key] == static::UPLOAD_ERR_NO_FILE)
-					{
-						continue;
-					}
-					// store the file data
-					$file = array('field' => $name, 'key' => $key);
-					$file['name'] = $value['name'][$key];
-					$file['type'] = $value['type'][$key];
-					$file['file'] = $value['tmp_name'][$key];
-					$file['error'] = $value['error'][$key];
-					$file['size'] = $value['size'][$key];
-					$files[] = $file;
-				}
-			}
-			else
-			{
-				// skip this entry if no file was uploaded
-				if ($value['error'] == static::UPLOAD_ERR_NO_FILE)
-				{
-					continue;
-				}
-				// store the file data
-				$file = array('field' => $name, 'key' => false, 'file' => $value['tmp_name']);
-				unset($value['tmp_name']);
-				$files[] = array_merge($value, $file);
-			}
+			// if we have an ftp object, activate the move callback
+			static::$upload->setConfig('moveCallback', '\\Upload\\move_callback');
 		}
-
-		// verify and augment the files data
-		foreach($files as $key => $value)
+		else
 		{
-			// add some filename details (pathinfo can't be trusted with utf-8 filenames!)
-			$files[$key]['extension'] = ltrim(strrchr(ltrim($files[$key]['name'], '.'), '.'),'.');
-			if (empty($files[$key]['extension']))
-			{
-				$files[$key]['filename'] = $files[$key]['name'];
-			}
-			else
-			{
-				$files[$key]['filename'] = substr($files[$key]['name'], 0, strlen($files[$key]['name'])-(strlen($files[$key]['extension'])+1));
-			}
-
-			// does this upload exceed the maximum size?
-			if (! empty(static::$config['max_size']) and $files[$key]['size'] > static::$config['max_size'])
-			{
-				$files[$key]['error'] = static::UPLOAD_ERR_MAX_SIZE;
-			}
-
-			// add mimetype information
-			if ($files[$key]['error'] == UPLOAD_ERR_OK)
-			{
-				$handle = finfo_open(FILEINFO_MIME_TYPE);
-				$files[$key]['mimetype'] = finfo_file($handle, $value['file']);
-				finfo_close($handle);
-				if ($files[$key]['mimetype'] == 'application/octet-stream' and $files[$key]['type'] != $files[$key]['mimetype'])
-				{
-					$files[$key]['mimetype'] = $files[$key]['type'];
-				}
-
-				// make sure it contains something valid
-				if (empty($files[$key]['mimetype']))
-				{
-					$files[$key]['mimetype'] = 'application/octet-stream';
-				}
-			}
-
-			// check the file extension black- and whitelists
-			if ($files[$key]['error'] == UPLOAD_ERR_OK)
-			{
-				if (in_array($files[$key]['extension'], (array) static::$config['ext_blacklist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_EXT_BLACKLISTED;
-				}
-				elseif ( ! empty(static::$config['ext_whitelist']) and ! in_array($files[$key]['extension'], (array) static::$config['ext_whitelist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_EXT_NOT_WHITELISTED;
-				}
-			}
-
-			// check the file type black- and whitelists
-			if ($files[$key]['error'] == UPLOAD_ERR_OK)
-			{
-				// split the mimetype info so we can run some tests
-				preg_match('|^(.*)/(.*)|', $files[$key]['mimetype'], $mimeinfo);
-
-				if (in_array($mimeinfo[1], (array) static::$config['type_blacklist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_TYPE_BLACKLISTED;
-				}
-				if ( ! empty(static::$config['type_whitelist']) and ! in_array($mimeinfo[1], (array) static::$config['type_whitelist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_TYPE_NOT_WHITELISTED;
-				}
-			}
-
-			// check the file mimetype black- and whitelists
-			if ($files[$key]['error'] == UPLOAD_ERR_OK)
-			{
-				if (in_array($files[$key]['mimetype'], (array) static::$config['mime_blacklist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_MIME_BLACKLISTED;
-				}
-				elseif ( ! empty(static::$config['ext_whitelist']) and ! in_array($files[$key]['mimetype'], (array) static::$config['ext_whitelist']))
-				{
-					$files[$key]['error'] = static::UPLOAD_ERR_MIME_NOT_WHITELISTED;
-				}
-			}
-
-			// store the normalized and validated result
-			static::$files[$key] = $files[$key];
-
-			// validation callback defined?
-			if (array_key_exists('validate', static::$callbacks) and ! is_null(static::$callbacks['validate']))
-			{
-				// get the callback method
-				$callback = static::$callbacks['validate'][0];
-
-				// call the callback
-				if (is_callable($callback))
-				{
-					$result = call_user_func_array($callback, array(&static::$files[$key]));
-					if (is_numeric($result))
-					{
-						static::$files[$key]['error'] = $result;
-					}
-				}
-			}
-
-			// update the valid flag
-			static::$valid = (static::$valid or ($files[$key]['error'] === 0));
+			// creating the ftp object failed, disable the callback
+			static::$upload->setConfig('moveCallback', null);
 		}
 	}
 
@@ -383,214 +333,47 @@ class Upload {
 	 */
 	public static function save()
 	{
-		// path to save the files to
-		$path = static::$config['path'];
+		// storage for arguments
+		$path = null;
+		$ids = array();
 
-		// files to save
-		$files = array();
-
-		// check for parameters
+		// do we have any arguments
 		if (func_num_args())
 		{
-			foreach(func_get_args() as $param)
+			// process them
+			foreach (func_get_args() as $arg)
 			{
-				// string => new path to save to
-				if (is_string($param))
+				if (is_string($arg))
 				{
-					$path = $param;
+					$path = $arg;
 				}
-				// array => list of $files indexes to save
-				elseif(is_array($param))
+				elseif(is_numeric($arg))
 				{
-					$files = array();
-					foreach($param as $key)
-					{
-						if (isset(static::$files[(int) $key]))
-						{
-							$files[(int) $key] = static::$files[(int) $key];
-						}
-					}
+					in_array($arg, $ids) or $ids[] = $arg;
 				}
-				// integer => files index to save
-				elseif(is_numeric($param))
+				elseif(is_array($arg))
 				{
-					if (isset(static::$files[$param]))
-					{
-						$files = array(static::$files[$param]);
-					}
+					$ids = array_merge($ids, $arg);
 				}
 			}
 		}
-		else
-		{
-			// save all files
-			$files = static::$files;
-		}
 
-		// anything to save?
-		if (empty($files))
+		// now process the files
+		$counter = 0;
+		foreach (static::$upload->getValidFiles() as $file)
 		{
-			throw new Exception('No uploaded files are selected.');
-		}
-
-		// make sure we have a valid path
-		$path = rtrim($path, DS).DS;
-		if ( ! is_dir($path) and (bool) static::$config['create_path'])
-		{
-			$oldumask = umask(0);
-			@mkdir($path, static::$config['path_chmod'], true);
-			umask($oldumask);
-		}
-		if ( ! is_dir($path))
-		{
-			throw new Exception('Can\'t move the uploaded file. Destination path specified does not exist.');
-		}
-
-		// now that we have a path, let's save the files
-		$oldumask = umask(0);
-		foreach($files as $key => $file)
-		{
-			// skip all files in error
-			if ($file['error'] != 0)
+			// do we want to process this file?
+			if ( ! empty($ids) and ! in_array($counter++, $ids))
 			{
+				// nope
 				continue;
 			}
 
-			// do we need to generate a random filename?
-			if ( (bool) static::$config['randomize'])
-			{
-				$filename = md5(serialize($file));
-			}
-			else
-			{
-				$filename  = $file['filename'];
-				if ( (bool) static::$config['normalize'])
-				{
-					$filename = \Inflector::friendly_title($filename, '_');
-				}
-			}
+			// was a custom path defined?
+			$path and $file->setConfig('path', $path);
 
-			// array with the final filename
-			$save_as = array(
-				static::$config['prefix'],
-				$filename,
-				static::$config['suffix'],
-				'',
-				'.',
-				empty(static::$config['extension']) ? $file['extension'] : static::$config['extension']
-			);
-			// remove the dot if no extension is present
-			if (empty($save_as[5]))
-			{
-				$save_as[4] = '';
-			}
-
-			// need to modify case?
-			switch(static::$config['change_case'])
-			{
-				case 'upper':
-					$save_as = array_map(function($var) { return strtoupper($var); }, $save_as);
-				break;
-
-				case 'lower':
-					$save_as = array_map(function($var) { return strtolower($var); }, $save_as);
-				break;
-
-				default:
-				break;
-			}
-
-
-			// check if the file already exists
-			if (file_exists($path.implode('', $save_as)))
-			{
-				if ( (bool) static::$config['auto_rename'])
-				{
-					$counter = 0;
-					do
-					{
-						$save_as[3] = '_'.++$counter;
-					}
-					while (file_exists($path.implode('', $save_as)));
-				}
-				else
-				{
-					if ( ! (bool) static::$config['overwrite'])
-					{
-						static::$files[$key]['error'] = static::UPLOAD_ERR_DUPLICATE_FILE;
-						continue;
-					}
-				}
-			}
-
-			// no need to store it as an array anymore
-			$save_as = implode('', $save_as);
-
-			// does the filename exceed the maximum length?
-			if ( ! empty(static::$config['max_length']) and strlen($save_as) > static::$config['max_length'])
-			{
-				static::$files[$key]['error'] = static::UPLOAD_ERR_MAX_FILENAME_LENGTH;
-				continue;
-			}
-
-			// if no error was detected, move the file
-			if (static::$files[$key]['error'] == UPLOAD_ERR_OK)
-			{
-				// save the additional information
-				static::$files[$key]['saved_to'] = $path;
-				static::$files[$key]['saved_as'] = $save_as;
-
-				// before callback defined?
-				if (array_key_exists('before', static::$callbacks) and ! is_null(static::$callbacks['before']))
-				{
-					// get the callback method
-					$callback = static::$callbacks['before'][0];
-
-					// call the callback
-					if (is_callable($callback))
-					{
-						$result = call_user_func_array($callback, array(&static::$files[$key]));
-						if (is_numeric($result))
-						{
-							static::$files[$key]['error'] = $result;
-						}
-					}
-				}
-
-				// move the uploaded file
-				if (static::$files[$key]['error'] == UPLOAD_ERR_OK)
-				{
-					if( ! @move_uploaded_file($file['file'], $path.$save_as) )
-					{
-						static::$files[$key]['error'] = static::UPLOAD_ERR_MOVE_FAILED;
-					}
-					else
-					{
-						@chmod($path.$save_as, static::$config['file_chmod']);
-					}
-
-					// after callback defined?
-					if (array_key_exists('after', static::$callbacks) and ! is_null(static::$callbacks['after']))
-					{
-						// get the callback method
-						$callback = static::$callbacks['after'][0];
-
-						// call the callback
-						if (is_callable($callback))
-						{
-							$result = call_user_func_array($callback, array(&static::$files[$key]));
-							if (is_numeric($result))
-							{
-								static::$files[$key]['error'] = $result;
-							}
-						}
-					}
-				}
-			}
+			// save the file
+			$file->save();
 		}
-		umask($oldumask);
 	}
-
 }
-
-/* End of file upload.php */

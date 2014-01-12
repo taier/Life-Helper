@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -18,7 +16,8 @@ namespace Fuel\Core;
 
 // --------------------------------------------------------------------
 
-class Session_File extends Session_Driver {
+class Session_File extends \Session_Driver
+{
 
 	/**
 	 * array of driver config defaults
@@ -45,23 +44,19 @@ class Session_File extends Session_Driver {
 	 * create a new session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_File
 	 */
 	public function create()
 	{
 		// create a new session
 		$this->keys['session_id']	= $this->_new_session_id();
 		$this->keys['previous_id']	= $this->keys['session_id'];	// prevents errors if previous_id has a unique index
-		$this->keys['ip_address']	= \Input::real_ip();
+		$this->keys['ip_hash']		= md5(\Input::ip().\Input::real_ip());
 		$this->keys['user_agent']	= \Input::user_agent();
 		$this->keys['created'] 		= $this->time->get_timestamp();
 		$this->keys['updated'] 		= $this->keys['created'];
 
-		// create the session record
-		$this->_write_file($this->keys['session_id'], serialize(array()));
-
-		// and set the session cookie
-		$this->_set_cookie();
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -71,63 +66,75 @@ class Session_File extends Session_Driver {
 	 *
 	 * @access	public
 	 * @param	boolean, set to true if we want to force a new session to be created
-	 * @return	void
+	 * @return	Fuel\Core\Session_Driver
 	 */
 	public function read($force = false)
 	{
+		// initialize the session
+		$this->data = array();
+		$this->keys = array();
+		$this->flash = array();
+
 		// get the session cookie
 		$cookie = $this->_get_cookie();
 
-		// if no session cookie was present, create it
-		if ($cookie === false or $force)
+		// if a cookie was present, find the session record
+		if ($cookie and ! $force and isset($cookie[0]))
 		{
-			$this->create();
-		}
-
-		// read the session file
-		$payload = $this->_read_file($this->keys['session_id']);
-
-		if ($payload === false)
-		{
-			// try to find the previous one
-			$payload = $this->_read_file($this->keys['previous_id']);
+			// read the session file
+			$payload = $this->_read_file($cookie[0]);
 
 			if ($payload === false)
 			{
 				// cookie present, but session record missing. force creation of a new session
-				$this->read(true);
-				return;
+				return $this->read(true);
 			}
-		}
 
-		// unpack the payload
-		$payload = $this->_unserialize($payload);
+			// unpack the payload
+			$payload = $this->_unserialize($payload);
 
-		// session referral?
-		if (isset($payload['rotated_session_id']))
-		{
-			$payload = $this->_read_file($payload['rotated_session_id']);
-			if ($payload === false)
+			// session referral?
+			if (isset($payload['rotated_session_id']))
 			{
-				// cookie present, but session record missing. force creation of a new session
-				$this->read(true);
-				return;
+				$payload = $this->_read_file($payload['rotated_session_id']);
+				if ($payload === false)
+				{
+					// cookie present, but session record missing. force creation of a new session
+					return $this->read(true);
+				}
+				else
+				{
+					// unpack the payload
+					$payload = $this->_unserialize($payload);
+				}
+			}
+
+			if ( ! isset($payload[0]) or ! is_array($payload[0]))
+			{
+				// not a valid cookie payload
+			}
+			elseif ($payload[0]['updated'] + $this->config['expiration_time'] <= $this->time->get_timestamp())
+			{
+				// session has expired
+			}
+			elseif ($this->config['match_ip'] and $payload[0]['ip_hash'] !== md5(\Input::ip().\Input::real_ip()))
+			{
+				// IP address doesn't match
+			}
+			elseif ($this->config['match_ua'] and $payload[0]['user_agent'] !== \Input::user_agent())
+			{
+				// user agent doesn't match
 			}
 			else
 			{
-				// update the session
-				$this->keys['previous_id'] = $this->keys['session_id'];
-				$this->keys['session_id'] = $payload['rotated_session_id'];
-
-				// unpack the payload
-				$payload = $this->_unserialize($payload);
+				// session is valid, retrieve the payload
+				if (isset($payload[0]) and is_array($payload[0])) $this->keys  = $payload[0];
+				if (isset($payload[1]) and is_array($payload[1])) $this->data  = $payload[1];
+				if (isset($payload[2]) and is_array($payload[2])) $this->flash = $payload[2];
 			}
 		}
 
-		if (isset($payload[0])) $this->data = $payload[0];
-		if (isset($payload[1])) $this->flash = $payload[1];
-
-		parent::read();
+		return parent::read();
 	}
 
 	// --------------------------------------------------------------------
@@ -136,33 +143,37 @@ class Session_File extends Session_Driver {
 	 * write the session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_File
 	 */
 	public function write()
 	{
 		// do we have something to write?
-		if ( ! empty($this->keys))
+		if ( ! empty($this->keys) or ! empty($this->data) or ! empty($this->flash))
 		{
 			parent::write();
 
 			// rotate the session id if needed
 			$this->rotate(false);
 
+			// record the last update time of the session
+			$this->keys['updated'] = $this->time->get_timestamp();
+
 			// session payload
-			$payload = $this->_serialize(array($this->data, $this->flash));
+			$payload = $this->_serialize(array($this->keys, $this->data, $this->flash));
 
 			// create the session file
 			$this->_write_file($this->keys['session_id'], $payload);
 
 			// was the session id rotated?
-			if ( isset($this->keys['previous_id']) && $this->keys['previous_id'] != $this->keys['session_id'])
+			if ( isset($this->keys['previous_id']) and $this->keys['previous_id'] != $this->keys['session_id'])
 			{
 				// point the old session file to the new one, we don't want to lose the session
 				$payload = $this->_serialize(array('rotated_session_id' => $this->keys['session_id']));
 				$this->_write_file($this->keys['previous_id'], $payload);
 			}
 
-			$this->_set_cookie();
+			// then update the cookie
+			$this->_set_cookie(array($this->keys['session_id']));
 
 			// do some garbage collection
 			if (mt_rand(0,100) < $this->config['gc_probability'])
@@ -173,8 +184,8 @@ class Session_File extends Session_Driver {
 
 					while (($file = readdir($handle)) !== false)
 					{
-						if (filetype($this->config['path'] . $file) == 'file' &&
-							strpos($file, $this->config['cookie_name'].'_') === 0 &&
+						if (filetype($this->config['path'] . $file) == 'file' and
+							strpos($file, $this->config['cookie_name'].'_') === 0 and
 							filemtime($this->config['path'] . $file) < $expire)
 						{
 							@unlink($this->config['path'] . $file);
@@ -184,6 +195,8 @@ class Session_File extends Session_Driver {
 				}
 			}
 		}
+
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -192,7 +205,7 @@ class Session_File extends Session_Driver {
 	 * destroy the current session
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Fuel\Core\Session_File
 	 */
 	public function destroy()
 	{
@@ -201,14 +214,15 @@ class Session_File extends Session_Driver {
 		{
 			// delete the session file
 			$file = $this->config['path'].$this->config['cookie_name'].'_'.$this->keys['session_id'];
-			if (file_exists($file))
+			if (is_file($file))
 			{
 				unlink($file);
 			}
 		}
 
-		// reset the stored session data
-		$this->keys = $this->flash = $this->data = array();
+		parent::destroy();
+
+		return $this;
 	}
 
 	// --------------------------------------------------------------------
@@ -223,7 +237,7 @@ class Session_File extends Session_Driver {
 	{
 		// create the session file
 		$file = $this->config['path'].$this->config['cookie_name'].'_'.$session_id;
-		$exists = file_exists($file);
+		$exists = is_file($file);
 		$handle = fopen($file,'c');
 		if ($handle)
 		{
@@ -242,6 +256,10 @@ class Session_File extends Session_Driver {
 			// close the file
 			fclose($handle);
 		}
+		else
+		{
+			throw new \FuelException('Could not open the session file in "'.$this->config['path']." for write access");
+		}
 
 		return $exists;
 	}
@@ -259,16 +277,19 @@ class Session_File extends Session_Driver {
 		$payload = false;
 
 		$file = $this->config['path'].$this->config['cookie_name'].'_'.$session_id;
-		if (file_exists($file))
+		if (is_file($file))
 		{
 			$handle = fopen($file,'r');
 			if ($handle)
 			{
 				// wait for a lock
-				while(!flock($handle, LOCK_EX));
+				while(!flock($handle, LOCK_SH));
 
 				// read the session data
-				$payload = fread($handle, filesize($file));
+				if ($size = filesize($file))
+				{
+					$payload = fread($handle, $size);
+				}
 
 				//release the lock
 				flock($handle, LOCK_UN);
@@ -312,12 +333,12 @@ class Session_File extends Session_Driver {
 						// do we have a path?
 						if ( empty($item) OR ! is_dir($item))
 						{
-							throw new \Fuel_Exception('You have specify a valid path to store the session data files.');
+							throw new \FuelException('You have specify a valid path to store the session data files.');
 						}
 						// and can we write to it?
 						if ( ! is_writable($item))
 						{
-							throw new \Fuel_Exception('The webserver doesn\'t have write access to the path to store the session data files.');
+							throw new \FuelException('The webserver doesn\'t have write access to the path to store the session data files.');
 						}
 						// update the path, and add the trailing slash
 						$item = realpath($item).'/';
@@ -348,4 +369,4 @@ class Session_File extends Session_Driver {
 
 }
 
-/* End of file file.php */
+

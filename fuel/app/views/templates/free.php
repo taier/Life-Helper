@@ -10,6 +10,7 @@
   pre { padding: 15px; background-color: #FFF; border: 1px solid #CCC; font-size: 16px;}
   #footer p { font-size: 14px; text-align: right; }
   a { color: #000; }
+  div {margin-left: 150px;}
  </style>
 </head>
 
@@ -18,15 +19,18 @@
 		<li><?php echo Html::anchor('templates/index', 'Back'); ?></li>
 		</div>
 
-
-	</br><label> Photo URL </label> </br>
+		<div class="form">
+	</br><label> Enter Cool Text Here! </label> </br>
 		<?php
 		 echo Form::open();
-	     echo Form::textarea('text', 
+		 ?>
+	   
+	    <?php echo Form::textarea('text', 
 			Input::post('text', 
 			    isset($text) ? $datas->text : '')); ?>
+		</br>
 		<?php echo Form::submit('submit', 'Save', array('class' => 'btn btn-default')); ?>
-
-			    <?php echo Form::close() ?>
-
+		</div>	
+	<?php echo Form::close() ?>
+		
 </div>

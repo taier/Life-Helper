@@ -2,7 +2,7 @@
 /**
  * Database query builder for INSERT statements.
  *
- * @package    Kohana/Database
+ * @package    Fuel/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,25 +11,30 @@
 
 namespace Fuel\Core;
 
-class Database_Query_Builder_Insert extends \Database_Query_Builder {
-
-	// INSERT INTO ...
+class Database_Query_Builder_Insert extends \Database_Query_Builder
+{
+	/**
+	 * @var string  $_table  table
+	 */
 	protected $_table;
 
-	// (...)
+	/**
+	 * @var array $_columns  columns
+	 */
 	protected $_columns = array();
 
-	// VALUES (...)
+	/**
+	 * @var array  $_values  values
+	 */
 	protected $_values = array();
 
 	/**
 	 * Set the table and columns for an insert.
 	 *
-	 * @param   mixed  table name or array($table, $alias) or object
-	 * @param   array  column names
-	 * @return  void
+	 * @param   mixed $table   table name or array($table, $alias) or object
+	 * @param   array $columns column names
 	 */
-	public function __construct($table = NULL, array $columns = NULL)
+	public function __construct($table = null, array $columns = null)
 	{
 		if ($table)
 		{
@@ -44,13 +49,13 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 		}
 
 		// Start the query with no SQL
-		return parent::__construct('', \Database::INSERT);
+		return parent::__construct('', \DB::INSERT);
 	}
 
 	/**
 	 * Sets the table to insert into.
 	 *
-	 * @param   mixed  table name or array($table, $alias) or object
+	 * @param   mixed $table table name or array($table, $alias) or object
 	 * @return  $this
 	 */
 	public function table($table)
@@ -63,28 +68,27 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 	/**
 	 * Set the columns that will be inserted.
 	 *
-	 * @param   array  column names
+	 * @param   array $columns column names
 	 * @return  $this
 	 */
 	public function columns(array $columns)
 	{
-		$this->_columns = $columns;
+		$this->_columns = array_merge($this->_columns, $columns);
 
 		return $this;
 	}
 
 	/**
-	 * Adds or overwrites values. Multiple value sets can be added.
+	 * Adds values. Multiple value sets can be added.
 	 *
-	 * @param   array   values list
-	 * @param   ...
 	 * @return  $this
+	 * @throws \FuelException
 	 */
 	public function values(array $values)
 	{
 		if ( ! is_array($this->_values))
 		{
-			throw new \Fuel_Exception('INSERT INTO ... SELECT statements cannot be combined with INSERT INTO ... VALUES');
+			throw new \FuelException('INSERT INTO ... SELECT statements cannot be combined with INSERT INTO ... VALUES');
 		}
 
 		// Get all of the passed values
@@ -98,7 +102,8 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 	/**
 	 * This is a wrapper function for calling columns() and values().
 	 *
-	 * @param	array	column value pairs
+	 * @param array $pairs column value pairs
+	 *
 	 * @return	$this
 	 */
 	public function set(array $pairs)
@@ -112,14 +117,17 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 	/**
 	 * Use a sub-query to for the inserted values.
 	 *
-	 * @param   object  Database_Query of SELECT type
+	 * @param   Database_Query  $query  Database_Query of SELECT type
+	 *
 	 * @return  $this
+	 *
+	 * @throws \FuelException
 	 */
 	public function select(Database_Query $query)
 	{
-		if ($query->type() !== \Database::SELECT)
+		if ($query->type() !== \DB::SELECT)
 		{
-			throw new \Fuel_Exception('Only SELECT queries can be combined with INSERT queries');
+			throw new \FuelException('Only SELECT queries can be combined with INSERT queries');
 		}
 
 		$this->_values = $query;
@@ -130,11 +138,18 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 	/**
 	 * Compile the SQL query and return it.
 	 *
-	 * @param   object  Database instance
+	 * @param   mixed  $db  Database instance or instance name
+	 *
 	 * @return  string
 	 */
-	public function compile(Database $db)
+	public function compile($db = null)
 	{
+		if ( ! $db instanceof \Database_Connection)
+		{
+			// Get the database instance
+			$db = \Database_Connection::instance($db);
+		}
+
 		// Start an insertion query
 		$query = 'INSERT INTO '.$db->quote_table($this->_table);
 
@@ -173,16 +188,18 @@ class Database_Query_Builder_Insert extends \Database_Query_Builder {
 		return $query;
 	}
 
+	/**
+	 * Reset the query parameters
+	 *
+	 * @return $this
+	 */
 	public function reset()
 	{
-		$this->_table = NULL;
-
-		$this->_columns =
+		$this->_table = null;
+		$this->_columns = array();
 		$this->_values  = array();
-
 		$this->_parameters = array();
 
 		return $this;
 	}
-
-} // End Database_Query_Builder_Insert
+}

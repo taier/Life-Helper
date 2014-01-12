@@ -1,138 +1,76 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
 
 
-class Cache_Storage_Redis extends Cache_Storage_Driver {
+class Cache_Storage_Redis extends \Cache_Storage_Driver
+{
 
 	/**
-	 * @const	string	Tag used for opening & closing cache properties
+	 * @const  string  Tag used for opening & closing cache properties
 	 */
 	const PROPS_TAG = 'Fuel_Cache_Properties';
 
 	/**
-	 * @var driver specific configuration
+	 * @var  array  driver specific configuration
 	 */
 	protected $config = array();
 
 	/*
-	 * @var	storage for the redis object
+	 * @var  Redis  storage for the redis object
 	 */
-	protected $redis = false;
+	protected static $redis = false;
 
 	// ---------------------------------------------------------------------
 
 	public function __construct($identifier, $config)
 	{
+		parent::__construct($identifier, $config);
+
 		$this->config = isset($config['redis']) ? $config['redis'] : array();
 
 		// make sure we have a redis id
-		$this->config['cache_id'] = $this->_validate_config('cache_id', isset($this->config['cache_id']) ? $this->config['cache_id'] : 'fuel');
+		$this->config['cache_id'] = $this->_validate_config('cache_id', isset($this->config['cache_id'])
+			? $this->config['cache_id'] : 'fuel');
 
 		// check for an expiration override
-		$this->expiration = $this->_validate_config('expiration', isset($this->config['expiration']) ? $this->config['expiration'] : $this->expiration);
+		$this->expiration = $this->_validate_config('expiration', isset($this->config['expiration'])
+			? $this->config['expiration'] : $this->expiration);
 
 		// make sure we have a redis database configured
-		$this->config['database'] = $this->_validate_config('database', isset($this->config['database']) ? $this->config['database'] : 'default');
+		$this->config['database'] = $this->_validate_config('database', isset($this->config['database'])
+			? $this->config['database'] : 'default');
 
-		if ($this->redis === false)
+		if (static::$redis === false)
 		{
 			// get the redis database instance
 			try
 			{
-				$this->redis = \Redis::instance($this->config['database']);
+				static::$redis = \Redis_Db::instance($this->config['database']);
 			}
-			catch (Exception $e)
+			catch (\Exception $e)
 			{
-				throw new \Cache_Exception('Can not connect to the Redis engine. The error message says "'.$e->getMessage().'".');
+				throw new \FuelException('Can not connect to the Redis engine. The error message says "'.$e->getMessage().'".');
 			}
 
 			// get the redis version
-			preg_match('/redis_version:(.*?)\n/', $this->redis->info(), $info);
+			preg_match('/redis_version:(.*?)\n/', static::$redis->info(), $info);
 			if (version_compare(trim($info[1]), '1.2') < 0)
 			{
-				throw new \Cache_Exception('Version 1.2 or higher of the Redis NoSQL engine is required to use the redis cache driver.');
+				throw new \FuelException('Version 1.2 or higher of the Redis NoSQL engine is required to use the redis cache driver.');
 			}
 		}
-
-		parent::__construct($identifier, $config);
-	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * Translates a given identifier to a valid redis key
-	 *
-	 * @param	string
-	 * @return	string
-	 * @throws	Cache_Exception
-	 */
-	protected function identifier_to_key( $identifier )
-	{
-		return $this->config['cache_id'].':'.$identifier;
-	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * Prepend the cache properties
-	 *
-	 * @return string
-	 */
-	protected function prep_contents()
-	{
-		$properties = array(
-			'created'			=> $this->created,
-			'expiration'		=> $this->expiration,
-			'dependencies'		=> $this->dependencies,
-			'content_handler'	=> $this->content_handler
-		);
-		$properties = '{{'.self::PROPS_TAG.'}}'.json_encode($properties).'{{/'.self::PROPS_TAG.'}}';
-
-		return $properties . $this->contents;
-	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * Remove the prepended cache properties and save them in class properties
-	 *
-	 * @param	string
-	 * @throws	Cache_Exception
-	 */
-	protected function unprep_contents($payload)
-	{
-		$properties_end = strpos($payload, '{{/'.self::PROPS_TAG.'}}');
-		if ($properties_end === FALSE)
-		{
-			throw new \Cache_Exception('Incorrect formatting');
-		}
-
-		$this->contents = substr($payload, $properties_end + strlen('{{/'.self::PROPS_TAG.'}}'));
-		$props = substr(substr($payload, 0, $properties_end), strlen('{{'.self::PROPS_TAG.'}}'));
-		$props = json_decode($props, true);
-		if ($props === NULL)
-		{
-			throw new \Cache_Exception('Properties retrieval failed');
-		}
-
-		$this->created			= $props['created'];
-		$this->expiration		= is_null($props['expiration']) ? null : (int) ($props['expiration'] - time());
-		$this->dependencies		= $props['dependencies'];
-		$this->content_handler	= $props['content_handler'];
 	}
 
 	// ---------------------------------------------------------------------
@@ -140,10 +78,10 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 	/**
 	 * Check if other caches or files have been changed since cache creation
 	 *
-	 * @param	array
-	 * @return	bool
+	 * @param   array
+	 * @return  bool
 	 */
-	public function check_dependencies(Array $dependencies)
+	public function check_dependencies(array $dependencies)
 	{
 		foreach($dependencies as $dep)
 		{
@@ -162,22 +100,20 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 			}
 
 			// get the cache index
-			$index = $this->redis->get($this->config['cache_id'].':index:'.$sections);
+			$index = static::$redis->get($this->config['cache_id'].':index:'.$sections);
 			is_null($index) or $index = $this->_unserialize($index);
 
 			// get the key from the index
 			$key = isset($index[$identifier][0]) ? $index[$identifier] : false;
 
 			// key found and newer?
-			if ($key !== false and $key[1] > $this->created)
+			if ($key === false or $key[1] > $this->created)
 			{
 				return false;
 			}
 		}
 		return true;
 	}
-
-	// ---------------------------------------------------------------------
 
 	/**
 	 * Delete Cache
@@ -188,7 +124,7 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		$key = $this->_get_key(true);
 
 		// delete the key from the redis server
-		if ($key and $this->redis->del($key) === false)
+		if ($key and static::$redis->del($key) === false)
 		{
 			// do something here?
 		}
@@ -196,14 +132,11 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		$this->reset();
 	}
 
-	// ---------------------------------------------------------------------
-
 	/**
 	 * Purge all caches
 	 *
-	 * @param	limit purge to subsection
-	 * @return	bool
-	 * @throws	Cache_Exception
+	 * @param   limit purge to subsection
+	 * @return  bool
 	 */
 	public function delete_all($section)
 	{
@@ -211,7 +144,7 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		$section = empty($section) ? '' : '.'.$section;
 
 		// get the directory index
-		$index = $this->redis->get($this->config['cache_id'].':dir:');
+		$index = static::$redis->get($this->config['cache_id'].':dir:');
 		is_null($index) or $index = $this->_unserialize($index);
 
 		if (is_array($index))
@@ -238,7 +171,7 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 			foreach ($dirs as $dir)
 			{
 				// get the stored cache entries for this index
-				$list = $this->redis->get($this->config['cache_id'].':index:'.$dir);
+				$list = static::$redis->get($this->config['cache_id'].':index:'.$dir);
 				if (is_null($list))
 				{
 					$list = array();
@@ -251,24 +184,81 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 				// delete all stored keys
 				foreach($list as $item)
 				{
-					$this->redis->del($item[0]);
+					static::$redis->del($item[0]);
 				}
 
 				// and delete the index itself
-				$this->redis->del($this->config['cache_id'].':index:'.$dir);
+				static::$redis->del($this->config['cache_id'].':index:'.$dir);
 			}
 
 			// update the directory index
-			$this->redis->set($this->config['cache_id'].':dir:', $this->_serialize(array_diff($index, $dirs)));
+			static::$redis->set($this->config['cache_id'].':dir:', $this->_serialize(array_diff($index, $dirs)));
 		}
 	}
 
 	// ---------------------------------------------------------------------
 
 	/**
+	 * Translates a given identifier to a valid redis key
+	 *
+	 * @param   string
+	 * @return  string
+	 */
+	protected function identifier_to_key( $identifier )
+	{
+		return $this->config['cache_id'].':'.$identifier;
+	}
+
+	/**
+	 * Prepend the cache properties
+	 *
+	 * @return string
+	 */
+	protected function prep_contents()
+	{
+		$properties = array(
+			'created'          => $this->created,
+			'expiration'       => $this->expiration,
+			'dependencies'     => $this->dependencies,
+			'content_handler'  => $this->content_handler
+		);
+		$properties = '{{'.static::PROPS_TAG.'}}'.json_encode($properties).'{{/'.static::PROPS_TAG.'}}';
+
+		return $properties.$this->contents;
+	}
+
+	/**
+	 * Remove the prepended cache properties and save them in class properties
+	 *
+	 * @param   string
+	 * @throws  UnexpectedValueException
+	 */
+	protected function unprep_contents($payload)
+	{
+		$properties_end = strpos($payload, '{{/'.static::PROPS_TAG.'}}');
+		if ($properties_end === FALSE)
+		{
+			throw new \UnexpectedValueException('Cache has bad formatting');
+		}
+
+		$this->contents = substr($payload, $properties_end + strlen('{{/'.static::PROPS_TAG.'}}'));
+		$props = substr(substr($payload, 0, $properties_end), strlen('{{'.static::PROPS_TAG.'}}'));
+		$props = json_decode($props, true);
+		if ($props === NULL)
+		{
+			throw new \UnexpectedValueException('Cache properties retrieval failed');
+		}
+
+		$this->created          = $props['created'];
+		$this->expiration       = is_null($props['expiration']) ? null : (int) ($props['expiration'] - time());
+		$this->dependencies     = $props['dependencies'];
+		$this->content_handler  = $props['content_handler'];
+	}
+
+	/**
 	 * Save a cache, this does the generic pre-processing
 	 *
-	 * @return	bool
+	 * @return  bool  success
 	 */
 	protected function _set()
 	{
@@ -276,19 +266,22 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		$key = $this->_get_key();
 
 		// write the cache
-		$this->redis->set($key, $this->prep_contents());
-		if (!empty($this->expiration))
+		static::$redis->set($key, $this->prep_contents());
+		if ( ! empty($this->expiration))
 		{
-			$this->redis->expireat($key, $this->expiration);
+			static::$redis->expireat($key, $this->expiration);
 		}
-	}
 
-	// ---------------------------------------------------------------------
+		// update the index
+		$this->_update_index($key);
+
+		return true;
+	}
 
 	/**
 	 * Load a cache, this does the generic post-processing
 	 *
-	 * @return bool
+	 * @return  bool  success
 	 */
 	protected function _get()
 	{
@@ -296,30 +289,112 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		$key = $this->_get_key();
 
 		// fetch the session data from the redis server
-		$payload = $this->redis->get($key);
+		$payload = static::$redis->get($key);
 		try
 		{
 			$this->unprep_contents($payload);
 		}
-		catch(Cache_Exception $e)
+		catch (\UnexpectedValueException $e)
 		{
-
 			return false;
 		}
 
 		return true;
 	}
 
-	// ---------------------------------------------------------------------
+	/**
+	 * validate a driver config value
+	 *
+	 * @param   string  name of the config variable to validate
+	 * @param   mixed   value
+	 * @return  mixed
+	 */
+	protected function _validate_config($name, $value)
+	{
+		switch ($name)
+		{
+			case 'database':
+				// do we have a database config
+				if (empty($value) or ! is_string($value))
+				{
+					$value = 'default';
+				}
+			break;
+
+			case 'cache_id':
+				if (empty($value) or ! is_string($value))
+				{
+					$value = 'fuel';
+				}
+			break;
+
+			case 'expiration':
+				if (empty($value) or ! is_numeric($value))
+				{
+					$value = null;
+				}
+			break;
+
+			default:
+			break;
+		}
+
+		return $value;
+	}
 
 	/**
-	 * get's the memcached key belonging to the cache identifier
+	 * get's the redis key belonging to the cache identifier
 	 *
-	 * @access	private
-	 * @param	bool		if true, remove the key retrieved from the index
+	 * @param   bool  if true, remove the key retrieved from the index
 	 * @return  string
 	 */
-	private function _get_key($remove = false)
+	protected function _get_key($remove = false)
+	{
+		// get the current index information
+		list($identifier, $sections, $index) = $this->_get_index();
+		$index = $index === null ? array() : $index = $this->_unserialize($index);
+
+		// get the key from the index
+		$key = isset($index[$identifier][0]) ? $index[$identifier][0] : false;
+
+		if ($remove === true)
+		{
+			if ( $key !== false )
+			{
+				unset($index[$identifier]);
+				static::$redis->set($this->config['cache_id'].':index:'.$sections, $this->_serialize($index));
+			}
+		}
+		else
+		{
+			// create a new key if needed
+			$key === false and $key = $this->_new_key();
+		}
+
+		return $key;
+	}
+
+	/**
+	 * generate a new unique key for the current identifier
+	 *
+	 * @return  string
+	 */
+	protected function _new_key()
+	{
+		$key = '';
+		while (strlen($key) < 32)
+		{
+			$key .= mt_rand(0, mt_getrandmax());
+		}
+		return md5($this->config['cache_id'].'_'.uniqid($key, TRUE));
+	}
+
+	/**
+	 * Get the section index
+	 *
+	 * @return  array  containing the identifier, the sections, and the section index
+	 */
+	protected function _get_index()
 	{
 		// get the section name and identifier
 		$sections = explode('.', $this->identifier);
@@ -334,126 +409,45 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 			$sections = '';
 		}
 
-		// get the cache index
-		$index = $this->redis->get($this->config['cache_id'].':index:'.$sections);
-		is_null($index) or $index = $this->_unserialize($index);
+		// get the cache index and return it
+		return array($identifier, $sections, static::$redis->get($this->config['cache_id'].':index:'.$sections));
+	}
 
-		// get the key from the index
-		$key = isset($index[$identifier][0]) ? $index[$identifier][0] : false;
+	/**
+	 * Update the section index
+	 *
+	 * @param  string  cache key
+	 */
+	protected function _update_index($key)
+	{
+		// get the current index information
+		list($identifier, $sections, $index) = $this->_get_index();
+		$index = $index === null ? array() : $index = $this->_unserialize($index);
 
-		if ($remove === true)
+		// store the key in the index and write the index back
+		$index[$identifier] = array($key, $this->created);
+
+		static::$redis->set($this->config['cache_id'].':index:'.$sections, $this->_serialize($index));
+
+		// get the directory index
+		$index = static::$redis->get($this->config['cache_id'].':dir:');
+		$index = $index === null ? array() : $index = $this->_unserialize($index);
+
+		if (is_array($index))
 		{
-			if ( $key !== false )
+			if ( ! in_array($sections, $index))
 			{
-				unset($index[$identifier]);
-				$this->redis->set($this->config['cache_id'].':index:'.$sections, $this->_serialize($index));
+				$index[] = $sections;
 			}
 		}
 		else
 		{
-			if ( $key === false )
-			{
-				// create a new key
-				$key = $this->_new_key();
-
-				if ( ! is_array($index))
-				{
-					// create a new index and store the key
-					$this->redis->set($this->config['cache_id'].':index:'.$sections, $this->_serialize(array($identifier => array($key,$this->created))));
-				}
-				else
-				{
-					// add the key to the index
-					$index[$identifier] = array($key,$this->created);
-					$this->redis->set($this->config['cache_id'].':index:'.$sections, $this->_serialize($index));
-				}
-
-				// get the directory index
-				$index = $this->redis->get($this->config['cache_id'].':dir:');
-				is_null($index) or $index = $this->_unserialize($index);
-
-				if (is_array($index))
-				{
-					if ( ! in_array($sections, $index))
-					{
-						$index[] = $sections;
-					}
-				}
-				else
-				{
-					$index = array($sections);
-				}
-
-				// update the directory index
-				$this->redis->set($this->config['cache_id'].':dir:', $this->_serialize($index));
-			}
+			$index = array($sections);
 		}
 
-		return $key;
+		// update the directory index
+		static::$redis->set($this->config['cache_id'].':dir:', $this->_serialize($index));
 	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * generate a new unique key for the current identifier
-	 *
-	 * @access	private
-	 * @return  string
-	 */
-	private function _new_key()
-	{
-		$key = '';
-		while (strlen($key) < 32)
-		{
-			$key .= mt_rand(0, mt_getrandmax());
-		}
-		return $this->config['cache_id'].'_'.uniqid($key);
-	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * validate a driver config value
-	 *
-	 * @param	string	name of the config variable to validate
-	 * @param	mixed	value
-	 * @access	private
-	 * @return  mixed
-	 */
-	private function _validate_config($name, $value)
-	{
-		switch ($name)
-		{
-			case 'database':
-				// do we have a database config
-				if ( empty($value) OR ! is_array($value))
-				{
-					$value = 'default';
-				}
-			break;
-
-			case 'cache_id':
-				if ( empty($value) OR ! is_string($value))
-				{
-					$value = 'fuel';
-				}
-			break;
-
-			case 'expiration':
-				if ( empty($value) OR ! is_numeric($value))
-				{
-					$value = null;
-				}
-			break;
-
-			default:
-			break;
-		}
-
-		return $value;
-	}
-
-	// --------------------------------------------------------------------
 
 	/**
 	 * Serialize an array
@@ -461,9 +455,8 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 	 * This function first converts any slashes found in the array to a temporary
 	 * marker, so when it gets unserialized the slashes will be preserved
 	 *
-	 * @access	private
-	 * @param	array
-	 * @return	string
+	 * @param   array
+	 * @return  string
 	 */
 	protected function _serialize($data)
 	{
@@ -488,17 +481,14 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 		return serialize($data);
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
 	 * Unserialize
 	 *
 	 * This function unserializes a data string, then converts any
 	 * temporary slash markers back to actual slashes
 	 *
-	 * @access	private
-	 * @param	array
-	 * @return	string
+	 * @param   array
+	 * @return  string
 	 */
 	protected function _unserialize($data)
 	{
@@ -519,7 +509,4 @@ class Cache_Storage_Redis extends Cache_Storage_Driver {
 
 		return (is_string($data)) ? str_replace('{{slash}}', '\\', $data) : $data;
 	}
-
 }
-
-/* End of file file.php */

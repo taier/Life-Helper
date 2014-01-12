@@ -1,18 +1,17 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
+
 
 /**
  * View class
@@ -21,41 +20,76 @@ namespace Fuel\Core;
  * Variables can be assigned with the view object and referenced locally within
  * the view.
  *
- * NOTE: This class has been taken from the Kohana framework and slightly modified,
- * but on the whole all credit goes to them. Over time this will be worked on.
- *
- * @package		Fuel
- * @category	Core
- * @author		Kohana Team
- * @modified	Phil Sturgeon - Fuel Development Team
- * @copyright	(c) 2008-2010 Kohana Team
- * @license		http://kohanaframework.org/license
- * @link		http://fuelphp.com/docs/classes/view.html
+ * @package   Fuel
+ * @category  Core
+ * @link      http://docs.fuelphp.com/classes/view.html
  */
-class View {
+class View
+{
 
-	// Array of global view data
-	protected static $_global_data = array();
+	/**
+	 * @var  array  Global view data
+	 */
+	protected static $global_data = array();
 
-	// View filename
-	protected $_file;
+	/**
+	 * @var  array  Holds a list of specific filter rules for global variables
+	 */
+	protected static $global_filter = array();
 
-	// Array of local variables
-	protected $_data = array();
+	/**
+	 * @var  array  Current active search paths
+	 */
+	protected $request_paths = array();
+
+	/**
+	 * @var  bool  Whether to auto-filter the view's data
+	 */
+	protected $auto_filter = true;
+
+	/**
+	 * @var  array  Holds a list of specific filter rules for local variables
+	 */
+	protected $local_filter = array();
+
+	/**
+	 * @var  string  The view's filename
+	 */
+	protected $file_name = null;
+
+	/**
+	 * @var  array  The view's data
+	 */
+	protected $data = array();
+
+	/**
+	 * @var  string  The view file extension
+	 */
+	protected $extension = 'php';
+
+	/**
+	 * @var  Request  active request when the View was created
+	 */
+	protected $active_request = null;
+
+	/**
+	 * @var  string  active language at the time the object was created
+	 */
+	protected $active_language = null;
 
 	/**
 	 * Returns a new View object. If you do not define the "file" parameter,
 	 * you must call [static::set_filename].
 	 *
-	 *     $view = View::factory($file);
+	 *     $view = View::forge($file);
 	 *
 	 * @param   string  view filename
 	 * @param   array   array of values
 	 * @return  View
 	 */
-	public static function factory($file = null, array $data = null)
+	public static function forge($file = null, $data = null, $auto_filter = null)
 	{
-		return new static($file, $data);
+		return new static($file, $data, $auto_filter);
 	}
 
 	/**
@@ -68,8 +102,19 @@ class View {
 	 * @return  void
 	 * @uses    View::set_filename
 	 */
-	public function __construct($file = null, array $data = null)
+	public function __construct($file = null, $data = null, $filter = null)
 	{
+		if (is_object($data) === true)
+		{
+			$data = get_object_vars($data);
+		}
+		elseif ($data and ! is_array($data))
+		{
+			throw new \InvalidArgumentException('The data parameter only accepts objects and arrays.');
+		}
+
+		$this->auto_filter = is_null($filter) ? \Config::get('security.auto_filter_output', true) : $filter;
+
 		if ($file !== null)
 		{
 			$this->set_filename($file);
@@ -78,8 +123,18 @@ class View {
 		if ($data !== null)
 		{
 			// Add the values to the current data
-			$this->_data = $data + $this->_data;
+			$this->data = $data;
 		}
+
+		// store the current request search paths to deal with out-of-context rendering
+		if (class_exists('Request', false) and $active = \Request::active() and \Request::main() != $active)
+		{
+			$this->request_paths = $active->get_paths();
+		}
+		isset($active) and $this->active_request = $active;
+
+		// store the active language, so we can render the view in the correct language later
+		$this->active_language = \Config::get('language', 'en');
 	}
 
 	/**
@@ -88,27 +143,13 @@ class View {
 	 *
 	 *     $value = $view->foo;
 	 *
-	 * [!!] If the variable has not yet been set, an exception will be thrown.
-	 *
 	 * @param   string  variable name
 	 * @return  mixed
-	 * @throws  Exception
+	 * @throws  OutOfBoundsException
 	 */
 	public function & __get($key)
 	{
-		if (array_key_exists($key, $this->_data))
-		{
-			return $this->_data[$key];
-		}
-		elseif (array_key_exists($key, static::$_global_data))
-		{
-			return static::$_global_data[$key];
-		}
-		else
-		{
-//			throw new Exception('View variable is not set: :var',
-//				array(':var' => $key));
-		}
+		return $this->get($key);
 	}
 
 	/**
@@ -137,7 +178,7 @@ class View {
 	 */
 	public function __isset($key)
 	{
-		return (isset($this->_data[$key]) or isset(static::$_global_data[$key]));
+		return (isset($this->data[$key]) or isset(static::$global_data[$key]));
 	}
 
 	/**
@@ -150,7 +191,7 @@ class View {
 	 */
 	public function __unset($key)
 	{
-		unset($this->_data[$key], static::$_global_data[$key]);
+		unset($this->data[$key], static::$global_data[$key]);
 	}
 
 	/**
@@ -178,42 +219,78 @@ class View {
 	 * The view data will be extracted to make local variables. This method
 	 * is static to prevent object scope resolution.
 	 *
-	 *     $output = View::capture($file, $data);
+	 *     $output = $this->process_file();
 	 *
-	 * @param   string  filename
+	 * @param   string  File override
 	 * @param   array   variables
 	 * @return  string
 	 */
-	protected static function capture($view_filename, array $view_data)
+	protected function process_file($file_override = false)
 	{
-		// Import the view variables to local namespace
-		$view_data AND extract($view_data, EXTR_SKIP);
-
-		if (static::$_global_data)
+		$clean_room = function($__file_name, array $__data)
 		{
-			// Import the global view variables to local namespace and maintain references
-			extract(static::$_global_data, EXTR_REFS);
+			extract($__data, EXTR_REFS);
+
+			// Capture the view output
+			ob_start();
+
+			try
+			{
+				// Load the view within the current scope
+				include $__file_name;
+			}
+			catch (\Exception $e)
+			{
+				// Delete the output buffer
+				ob_end_clean();
+
+				// Re-throw the exception
+				throw $e;
+			}
+
+			// Get the captured output and close the buffer
+			return ob_get_clean();
+		};
+		return $clean_room($file_override ?: $this->file_name, $this->get_data());
+	}
+
+	/**
+	 * Retrieves all the data, both local and global.  It filters the data if
+	 * necessary.
+	 *
+	 *     $data = $this->get_data();
+	 *
+	 * @param   string  $scope  local/glocal/all
+	 * @return  array   view data
+	 */
+	protected function get_data($scope = 'all')
+	{
+		$clean_it = function ($data, $rules, $auto_filter)
+		{
+			foreach ($data as $key => &$value)
+			{
+				$filter = array_key_exists($key, $rules) ? $rules[$key] : null;
+				$filter = is_null($filter) ? $auto_filter : $filter;
+
+				$value = $filter ? \Security::clean($value, null, 'security.output_filter') : $value;
+			}
+
+			return $data;
+		};
+
+		$data = array();
+
+		if ( ! empty($this->data)  and ($scope === 'all' or $scope === 'local'))
+		{
+			$data += $clean_it($this->data, $this->local_filter, $this->auto_filter);
 		}
 
-		// Capture the view output
-		ob_start();
-
-		try
+		if ( ! empty(static::$global_data)  and ($scope === 'all' or $scope === 'global'))
 		{
-			// Load the view within the current scope
-			include $view_filename;
-		}
-		catch (\Exception $e)
-		{
-			// Delete the output buffer
-			ob_end_clean();
-
-			// Re-throw the exception
-			throw $e;
+			$data += $clean_it(static::$global_data, static::$global_filter, $this->auto_filter);
 		}
 
-		// Get the captured output and close the buffer
-		return ob_get_clean();
+		return $data;
 	}
 
 	/**
@@ -224,20 +301,29 @@ class View {
 	 *
 	 * @param   string  variable name or an array of variables
 	 * @param   mixed   value
+	 * @param   bool    whether to filter the data or not
 	 * @return  void
 	 */
-	public static function set_global($key, $value = null)
+	public static function set_global($key, $value = null, $filter = null)
 	{
 		if (is_array($key))
 		{
-			foreach ($key as $key2 => $value)
+			foreach ($key as $name => $value)
 			{
-				static::$_global_data[$key2] = $value;
+				if ($filter !== null)
+				{
+					static::$global_filter[$name] = $filter;
+				}
+				static::$global_data[$name] = $value;
 			}
 		}
 		else
 		{
-			static::$_global_data[$key] = $value;
+			if ($filter !== null)
+			{
+				static::$global_filter[$key] = $filter;
+			}
+			static::$global_data[$key] = $value;
 		}
 	}
 
@@ -249,12 +335,38 @@ class View {
 	 *
 	 * @param   string  variable name
 	 * @param   mixed   referenced variable
+	 * @param   bool    whether to filter the data or not
 	 * @return  void
 	 */
-	public static function bind_global($key, & $value)
+	public static function bind_global($key, &$value, $filter = null)
 	{
-		static::$_global_data[$key] =& $value;
+		if ($filter !== null)
+		{
+			static::$global_filter[$key] = $filter;
+		}
+		static::$global_data[$key] =& $value;
 	}
+
+	/**
+	 * Sets whether to filter the data or not.
+	 *
+	 *     $view->auto_filter(false);
+	 *
+	 * @param   bool  whether to auto filter or not
+	 * @return  View
+	 */
+	public function auto_filter($filter = true)
+	{
+		if (func_num_args() == 0)
+		{
+			return $this->auto_filter;
+		}
+
+		$this->auto_filter = $filter;
+
+		return $this;
+	}
+
 
 	/**
 	 * Sets the view filename.
@@ -263,19 +375,66 @@ class View {
 	 *
 	 * @param   string  view filename
 	 * @return  View
-	 * @throws  View_Exception
+	 * @throws  FuelException
 	 */
 	public function set_filename($file)
 	{
-		if (($path = \Fuel::find_file('views', $file, '.php', false, false)) === false)
+		// set find_file's one-time-only search paths
+		\Finder::instance()->flash($this->request_paths);
+
+		// locate the view file
+		if (($path = \Finder::search('views', $file, '.'.$this->extension, false, false)) === false)
 		{
-			throw new \View_Exception('The requested view could not be found: '.\Fuel::clean_path($file));
+			throw new \FuelException('The requested view could not be found: '.\Fuel::clean_path($file));
 		}
 
 		// Store the file path locally
-		$this->_file = $path;
+		$this->file_name = $path;
 
 		return $this;
+	}
+
+	/**
+	 * Searches for the given variable and returns its value.
+	 * Local variables will be returned before global variables.
+	 *
+	 *     $value = $view->get('foo', 'bar');
+	 *
+	 * If the key is not given or null, the entire data array is returned.
+	 *
+	 * If a default parameter is not given and the variable does not
+	 * exist, it will throw an OutOfBoundsException.
+	 *
+	 * @param   string  The variable name
+	 * @param   mixed   The default value to return
+	 * @return  mixed
+	 * @throws  OutOfBoundsException
+	 */
+	public function &get($key = null, $default = null)
+	{
+		if (func_num_args() === 0 or $key === null)
+		{
+			return $this->data;
+		}
+		elseif (array_key_exists($key, $this->data))
+		{
+			return $this->data[$key];
+		}
+		elseif (array_key_exists($key, static::$global_data))
+		{
+			return static::$global_data[$key];
+		}
+
+		if (is_null($default) and func_num_args() === 1)
+		{
+			throw new \OutOfBoundsException('View variable is not set: '.$key);
+		}
+		else
+		{
+			// assign it first, you can't return a return value by reference directly!
+			$default = \Fuel::value($default);
+			return $default;
+		}
 	}
 
 	/**
@@ -292,23 +451,47 @@ class View {
 	 *
 	 * @param   string   variable name or an array of variables
 	 * @param   mixed    value
+	 * @param   bool     whether to filter the data or not
 	 * @return  $this
 	 */
-	public function set($key, $value = null)
+	public function set($key, $value = null, $filter = null)
 	{
 		if (is_array($key))
 		{
 			foreach ($key as $name => $value)
 			{
-				$this->_data[$name] = $value;
+				if ($filter !== null)
+				{
+					$this->local_filter[$name] = $filter;
+				}
+				$this->data[$name] = $value;
 			}
 		}
 		else
 		{
-			$this->_data[$key] = $value;
+			if ($filter !== null)
+			{
+				$this->local_filter[$key] = $filter;
+			}
+			$this->data[$key] = $value;
 		}
 
 		return $this;
+	}
+
+	/**
+	 * The same as set(), except this defaults to not-encoding the variable
+	 * on output.
+	 *
+	 *     $view->set_safe('foo', 'bar');
+	 *
+	 * @param   string   variable name or an array of variables
+	 * @param   mixed    value
+	 * @return  $this
+	 */
+	public function set_safe($key, $value = null)
+	{
+		return $this->set($key, $value, false);
 	}
 
 	/**
@@ -322,11 +505,16 @@ class View {
 	 *
 	 * @param   string   variable name
 	 * @param   mixed    referenced variable
+	 * @param   bool     Whether to filter the var on output
 	 * @return  $this
 	 */
-	public function bind($key, & $value)
+	public function bind($key, &$value, $filter = null)
 	{
-		$this->_data[$key] =& $value;
+		if ($filter !== null)
+		{
+			$this->local_filter[$key] = $filter;
+		}
+		$this->data[$key] =& $value;
 
 		return $this;
 	}
@@ -342,25 +530,50 @@ class View {
 	 *
 	 * @param    string  view filename
 	 * @return   string
-	 * @throws   Fuel_View_Exception
+	 * @throws   FuelException
 	 * @uses     static::capture
 	 */
 	public function render($file = null)
 	{
+		// reactivate the correct request
+		if (class_exists('Request', false))
+		{
+			$current_request = \Request::active();
+			\Request::active($this->active_request);
+		}
+
+		// store the current language, and set the correct render language
+		if ($this->active_language)
+		{
+			$current_language = \Config::get('language', 'en');
+			\Config::set('language', $this->active_language);
+		}
+
+		// override the view filename if needed
 		if ($file !== null)
 		{
 			$this->set_filename($file);
 		}
 
-		if (empty($this->_file))
+		// and make sure we have one
+		if (empty($this->file_name))
 		{
-			throw new \View_Exception('You must set the file to use within your view before rendering');
+			throw new \FuelException('You must set the file to use within your view before rendering');
 		}
 
-		// Combine local and global data and capture the output
-		return static::capture($this->_file, $this->_data);
+		// combine local and global data and capture the output
+		$return = $this->process_file();
+
+		// restore the current language setting
+		$this->active_language and \Config::set('language', $current_language);
+
+		// and the active request class
+		if (isset($current_request))
+		{
+			\Request::active($current_request);
+		}
+
+		return $return;
 	}
 
 }
-
-/* End of file view.php */

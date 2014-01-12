@@ -4,18 +4,19 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Auth;
 
 
-abstract class Auth_Driver {
+abstract class Auth_Driver
+{
 
 	/**
 	 * @var	Auth_Driver
@@ -29,9 +30,9 @@ abstract class Auth_Driver {
 	 */
 	// protected static $_instances = array();
 
-	public static function factory(Array $config = array())
+	public static function forge(array $config = array())
 	{
-		throw new \Auth_Exception('Driver must have a factory method extension.');
+		throw new \AuthException('Driver must have a factory method extension.');
 	}
 
 	/**
@@ -54,11 +55,6 @@ abstract class Auth_Driver {
 			}
 
 			return static::$_instances[$instance];
-		}
-
-		if (static::$_instance === null)
-		{
-			static::$_instance = static::factory();
 		}
 
 		return static::$_instance;
@@ -113,6 +109,16 @@ abstract class Auth_Driver {
 	public function get_config($key, $default = null)
 	{
 		return array_key_exists($key, $this->config) ? $this->config[$key] : $default;
+	}
+
+	/**
+	 * Whether this driver supports guest login
+	 *
+	 * @return  bool
+	 */
+	public function guest_login()
+	{
+		return false;
 	}
 }
 

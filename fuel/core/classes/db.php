@@ -2,7 +2,7 @@
 /**
  * Database object creation helper methods.
  *
- * @package    Kohana/Database
+ * @package    Fuel/Database
  * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
@@ -13,7 +13,14 @@ namespace Fuel\Core;
 
 
 
-class DB {
+class DB
+{
+
+	// Query types
+	const SELECT =  1;
+	const INSERT =  2;
+	const UPDATE =  3;
+	const DELETE =  4;
 
 	public static $query_count = 0;
 
@@ -28,17 +35,37 @@ class DB {
 	 *     $query = DB::query('DELETE FROM users WHERE id = 5');
 	 *
 	 * Specifying the type changes the returned result. When using
-	 * `Database::SELECT`, a [Database_Query_Result] will be returned.
-	 * `Database::INSERT` queries will return the insert id and number of rows.
+	 * `DB::SELECT`, a [Database_Query_Result] will be returned.
+	 * `DB::INSERT` queries will return the insert id and number of rows.
 	 * For all other queries, the number of affected rows is returned.
 	 *
-	 * @param   integer  type: Database::SELECT, Database::UPDATE, etc
+	 * @param   integer  type: DB::SELECT, DB::UPDATE, etc
 	 * @param   string   SQL statement
 	 * @return  Database_Query
 	 */
 	public static function query($sql, $type = null)
 	{
 		return new \Database_Query($sql, $type);
+	}
+
+	/*
+	 * Returns the last query
+	 *
+	 * @return	string	the last query
+	 */
+	public static function last_query($db = null)
+	{
+		return \Database_Connection::instance($db)->last_query;
+	}
+
+	/*
+	 * Returns the DB drivers error info
+	 *
+	 * @return	mixed	the DB drivers error info
+	 */
+	public static function error_info($db = null)
+	{
+		return \Database_Connection::instance($db)->error_info();
 	}
 
 	/**
@@ -132,6 +159,41 @@ class DB {
 	}
 
 	/**
+	 * Create a new [Database_Expression] containing a quoted identifier. An expression
+	 * is the only way to use SQL functions within query builders.
+	 *
+	 *     $expression = DB::identifier('users.id');	// returns `users`.`id` for MySQL
+	 *
+	 * @param	string	$string	the string to quote
+	 * @param	string	$db		the database connection to use
+	 * @return	Database_Expression
+	 */
+	public static function identifier($string, $db = null)
+	{
+		return new \Database_Expression(static::quote_identifier($string, $db));
+	}
+
+	/**
+	 * Quote a value for an SQL query.
+	 *
+	 * @param	string	$string	the string to quote
+	 * @param	string	$db		the database connection to use
+	 * @return	string	the quoted value
+	 */
+	public static function quote($string, $db = null)
+	{
+		if (is_array($string))
+		{
+			foreach ($string as $k => $s)
+			{
+				$string[$k] = static::quote($s, $db);
+			}
+			return $string;
+		}
+		return \Database_Connection::instance($db)->quote($string);
+	}
+
+	/**
 	 * Quotes an identifier so it is ready to use in a query.
 	 *
 	 * @param	string	$string	the string to quote
@@ -148,7 +210,27 @@ class DB {
 			}
 			return $string;
 		}
-		return \Database::instance($db)->quote_identifier($string);
+		return \Database_Connection::instance($db)->quote_identifier($string);
+	}
+
+	/**
+	 * Quote a database table name and adds the table prefix if needed.
+	 *
+	 * @param	string	$string	the string to quote
+	 * @param	string	$db		the database connection to use
+	 * @return	string	the quoted identifier
+	 */
+	public static function quote_table($string, $db = null)
+	{
+		if (is_array($string))
+		{
+			foreach ($string as $k => $s)
+			{
+				$string[$k] = static::quote_table($s, $db);
+			}
+			return $string;
+		}
+		return \Database_Connection::instance($db)->quote_table($string);
 	}
 
 	/**
@@ -160,7 +242,163 @@ class DB {
 	 */
 	public static function escape($string, $db = null)
 	{
-		return \Database::instance($db)->escape($string);
+		return \Database_Connection::instance($db)->escape($string);
 	}
 
-} // End DB
+	/**
+	 * If a table name is given it will return the table name with the configured
+	 * prefix.  If not, then just the prefix is returned
+	 *
+	 * @param   string  $table  the table name to prefix
+	 * @param   string  $db     the database connection to use
+	 * @return  string  the prefixed table name or the prefix
+	 */
+	public static function table_prefix($table = null, $db = null)
+	{
+		return \Database_Connection::instance($db)->table_prefix($table);
+	}
+
+	/**
+	 * Lists all of the columns in a table. Optionally, a LIKE string can be
+	 * used to search for specific fields.
+	 *
+	 *     // Get all columns from the "users" table
+	 *     $columns = DB::list_columns('users');
+	 *
+	 *     // Get all name-related columns
+	 *     $columns = DB::list_columns('users', '%name%');
+	 *
+	 * @param   string  table to get columns from
+	 * @param   string  column to search for
+	 * @param   string  the database connection to use
+	 * @return  array
+	 */
+	public static function list_columns($table = null, $like = null, $db = null)
+	{
+		return \Database_Connection::instance($db)->list_columns($table, $like);
+	}
+
+	/**
+	 * If a table name is given it will return the table name with the configured
+	 * prefix.  If not, then just the prefix is returned
+	 *
+	 * @param   string  $table  the table name to prefix
+	 * @param   string  $db     the database connection to use
+	 * @return  string  the prefixed table name or the prefix
+	 */
+	public static function list_tables($like = null, $db = null)
+	{
+		return \Database_Connection::instance($db)->list_tables($like);
+	}
+
+	/**
+	 * Returns a normalized array describing the SQL data type
+	 *
+	 *     DB::datatype('char');
+	 *
+	 * @param   string  SQL data type
+	 * @param   string  db connection
+	 * @return  array
+	 */
+	public static function datatype($type, $db = null)
+	{
+		return \Database_Connection::instance($db)->datatype($type);
+	}
+
+		/**
+	 * Count the number of records in a table.
+	 *
+	 *     // Get the total number of records in the "users" table
+	 *     $count = DB::count_records('users');
+	 *
+	 * @param   mixed    table name string or array(query, alias)
+	 * @param   string  db connection
+	 * @return  integer
+	 */
+	public static function count_records($table, $db = null)
+	{
+		return \Database_Connection::instance($db)->count_records($table);
+	}
+
+	/**
+	 * Count the number of records in the last query, without LIMIT or OFFSET applied.
+	 *
+	 *     // Get the total number of records that match the last query
+	 *     $count = $db->count_last_query();
+	 *
+	 * @param   string  db connection
+	 * @return  integer
+	 */
+	public static function count_last_query($db = null)
+	{
+		return \Database_Connection::instance($db)->count_last_query();
+	}
+
+	/**
+	 * Set the connection character set. This is called automatically by [static::connect].
+	 *
+	 *     DB::set_charset('utf8');
+	 *
+	 * @throws  Database_Exception
+	 * @param   string   character set name
+	 * @param   string  db connection
+	 * @return  void
+	 */
+	public static function set_charset($charset, $db = null)
+	{
+		\Database_Connection::instance($db)->set_charset($charset);
+	}
+
+	/**
+	 * Checks whether a connection is in transaction.
+	 *
+	 *     DB::in_transaction();
+	 *
+	 * @param   string  db connection
+	 * @return  bool
+	 */
+	public static function in_transaction($db = null)
+	{
+		return \Database_Connection::instance($db)->in_transaction();
+	}
+
+	/**
+	 * Begins a transaction on instance
+	 *
+	 *     DB::start_transaction();
+	 *
+	 * @param   string  db connection
+	 * @return  bool
+	 */
+	public static function start_transaction($db = null)
+	{
+		return \Database_Connection::instance($db)->start_transaction();
+	}
+
+	/**
+	 * Commits all pending transactional queries
+	 *
+	 *     DB::commit_transaction();
+	 *
+	 * @param   string  db connection
+	 * @return  bool
+	 */
+	public static function commit_transaction($db = null)
+	{
+		return \Database_Connection::instance($db)->commit_transaction();
+	}
+
+	/**
+	 * Rollsback all pending transactional queries
+	 *
+	 *     DB::rollback_transaction();
+	 *
+	 * @param   string  db connection
+	 * @return  bool
+	 */
+	public static function rollback_transaction($db = null)
+	{
+		return \Database_Connection::instance($db)->rollback_transaction();
+	}
+
+}

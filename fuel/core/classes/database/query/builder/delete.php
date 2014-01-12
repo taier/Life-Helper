@@ -2,7 +2,7 @@
 /**
  * Database query builder for DELETE statements.
  *
- * @package    Kohana/Database
+ * @package    Fuel/Database
  * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
@@ -11,7 +11,8 @@
 
 namespace Fuel\Core;
 
-class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
+class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
+{
 
 	// DELETE FROM ...
 	protected $_table;
@@ -19,10 +20,9 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
 	/**
 	 * Set the table for a delete.
 	 *
-	 * @param   mixed  table name or array($table, $alias) or object
-	 * @return  void
+	 * @param mixed $table table name or array($table, $alias) or object
 	 */
-	public function __construct($table = NULL)
+	public function __construct($table = null)
 	{
 		if ($table)
 		{
@@ -31,13 +31,14 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
 		}
 
 		// Start the query with no SQL
-		return parent::__construct('', \Database::DELETE);
+		return parent::__construct('', \DB::DELETE);
 	}
 
 	/**
 	 * Sets the table to delete from.
 	 *
-	 * @param   mixed  table name or array($table, $alias) or object
+	 * @param   mixed  $table  table name or array($table, $alias) or object
+	 *
 	 * @return  $this
 	 */
 	public function table($table)
@@ -50,11 +51,18 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
 	/**
 	 * Compile the SQL query and return it.
 	 *
-	 * @param   object  Database instance
+	 * @param   mixed  $db  Database_Connection instance or instance name
+	 *
 	 * @return  string
 	 */
-	public function compile(Database $db)
+	public function compile($db = null)
 	{
+		if ( ! $db instanceof \Database_Connection)
+		{
+			// Get the database instance
+			$db = \Database_Connection::instance($db);
+		}
+
 		// Start a deletion query
 		$query = 'DELETE FROM '.$db->quote_table($this->_table);
 
@@ -79,14 +87,22 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where {
 		return $query;
 	}
 
+	/**
+	 * Reset the query parameters
+	 *
+	 * @return $this
+	 */
 	public function reset()
 	{
 		$this->_table = NULL;
-		$this->_where = array();
+
+		$this->_where    = array();
+		$this->_order_by = array();
 
 		$this->_parameters = array();
 
+		$this->_limit = NULL;
+
 		return $this;
 	}
-
-} // End Database_Query_Builder_Delete
+}

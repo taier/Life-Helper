@@ -1,201 +1,165 @@
 <?php
 /**
- * Fuel
+ * Part of the Fuel framework.
  *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
- *
- * @package		Fuel
- * @version		1.0
- * @author		Dan Horrigan <http://dhorrigan.com>
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @package    Fuel
+ * @version    1.7
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
 
-
-
-class Asset {
+/**
+ * The Asset class allows you to easily work with your apps assets.
+ * It allows you to specify multiple paths to be searched for the
+ * assets.
+ *
+ * You can configure the paths by copying the core/config/asset.php
+ * config file into your app/config folder and changing the settings.
+ *
+ * @package     Fuel
+ * @subpackage  Core
+ */
+class Asset
+{
 
 	/**
-	 * @var	array	The asset paths
+	 * default instance
+	 *
+	 * @var  array
 	 */
-	protected static $_asset_paths = array();
+	protected static $_instance = null;
 
 	/**
-	 * @var	string	The URL to be prepended to all assets
+	 * All the Asset instances
+	 *
+	 * @var  array
 	 */
-	protected static $_asset_url = '/';
+	protected static $_instances = array();
 
 	/**
-	 * @var	string	The folder names
+	 * Default configuration values
+	 *
+	 * @var  array
 	 */
-	protected static $_folders = array(
-		'css'	=>	'css/',
-		'js'	=>	'js/',
-		'img'	=>	'img/',
+	protected static $default_config = array(
+		'paths' => array('assets/'),
+		'img_dir' => 'img/',
+		'js_dir' => 'js/',
+		'css_dir' => 'css/',
+		'folders' => array(
+			'css' => array(),
+			'js'  => array(),
+			'img' => array(),
+		),
+		'url' => '/',
+		'add_mtime' => true,
+		'indent_level' => 1,
+		'indent_with' => "\t",
+		'auto_render' => true,
+		'fail_silently' => false,
 	);
 
 	/**
-	 * @var	array	Holds the groups of assets
-	 */
-	protected static $_groups = array();
-
-	/**
-	 * @var	bool	Get this baby going
-	 */
-	public static $initialized = false;
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Init
+	 * This is called automatically by the Autoloader.  It loads in the config
 	 *
-	 * Loads in the config and sets the variables
-	 *
-	 * @access	public
-	 * @return	void
+	 * @return  void
 	 */
 	public static function _init()
 	{
-		// Prevent multiple initializations
-		if (static::$initialized)
-		{
-			return;
-		}
-
-		\Config::load('asset', true);
-
-		$paths = \Config::get('asset.paths');
-
-		foreach($paths as $path)
-		{
-			static::add_path($path);
-		}
-
-		static::$_asset_url = \Config::get('asset.url');
-
-		static::$_folders = array(
-			'css'	=>	\Config::get('asset.css_dir'),
-			'js'	=>	\Config::get('asset.js_dir'),
-			'img'	=>	\Config::get('asset.img_dir')
-		);
-
-		static::$initialized = true;
+		\Config::load('asset', true, false, true);
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
-	 * Add Path
+	 * Return a specific instance, or the default instance (is created if necessary)
 	 *
-	 * Adds the given path to the front of the asset paths array
-	 *
-	 * @access	public
-	 * @param	string	The path to add
-	 * @return	void
+	 * @param   string  instance name
+	 * @return  Asset_Instance
 	 */
-	public static function add_path($path)
+	public static function instance($instance = null)
 	{
-		array_unshift(static::$_asset_paths, str_replace('../', '', $path));
+		if ($instance !== null)
+		{
+			if ( ! array_key_exists($instance, static::$_instances))
+			{
+				return false;
+			}
+
+			return static::$_instances[$instance];
+		}
+
+		if (static::$_instance === null)
+		{
+			static::$_instance = static::forge();
+		}
+
+		return static::$_instance;
 	}
 
-	// --------------------------------------------------------------------
+	/**
+	 * Gets a new instance of the Asset class.
+	 *
+	 * @param   string  instance name
+	 * @param   array  $config  default config overrides
+	 * @return  Asset_Instance
+	 */
+	public static function forge($name = 'default', array $config = array())
+	{
+		if ($exists = static::instance($name))
+		{
+			\Error::notice('Asset with this name exists already, cannot be overwritten.');
+			return $exists;
+		}
+
+		static::$_instances[$name] = new \Asset_Instance(array_merge(static::$default_config, \Config::get('asset'), $config));
+
+		if ($name == 'default')
+		{
+			static::$_instance = static::$_instances[$name];
+		}
+
+		return static::$_instances[$name];
+	}
 
 	/**
-	 * Remove Path
+	 * Adds the given path to the front of the asset paths array.  It adds paths
+	 * in a way so that asset paths are used First in Last Out.
 	 *
+	 * @param   string  the path to add
+	 * @return  void
+	 */
+	public static function add_path($path, $type = null)
+	{
+		static::instance()->add_path($path, $type);
+	}
+
+	/**
 	 * Removes the given path from the asset paths array
 	 *
-	 * @access	public
-	 * @param	string	The path to remove
-	 * @return	void
+	 * @param   string  the path to remove
+	 * @return  void
 	 */
-	public static function remove_path($path)
+	public static function remove_path($path, $type = null)
 	{
-		if (($key = array_search(str_replace('../', '', $path), static::$_asset_paths)) !== false)
-		{
-			unset(static::$_asset_paths[$key]);
-		}
+		static::instance()->remove_path($path, $type);
 	}
 
-	// --------------------------------------------------------------------
-
 	/**
-	 * Render
+	 * Renders the given group.  Each tag will be separated by a line break.
+	 * You can optionally tell it to render the files raw.  This means that
+	 * all CSS and JS files in the group will be read and the contents included
+	 * in the returning value.
 	 *
-	 * Renders the group of assets and returns the tags.
-	 *
-	 * @access	public
-	 * @param	mixed	The group to render
-	 * @param	bool	Whether to return the raw file or not
-	 * @return	string	The group's output
+	 * @param   mixed   the group to render
+	 * @param   bool    whether to return the raw file or not
+	 * @return  string  the group's output
 	 */
-	public static function render($group, $raw = false)
+	public static function render($group = null, $raw = false)
 	{
-		if (is_string($group))
-		{
-			$group = isset(static::$_groups[$group]) ? static::$_groups[$group] : array();
-		}
-
-		$css = '';
-		$js = '';
-		$img = '';
-		foreach ($group as $key => $item)
-		{
-			$type = $item['type'];
-			$filename = $item['file'];
-			$attr = $item['attr'];
-
-			if (strpos($filename, '://') === false)
-			{
-				if ( ! ($file = static::find_file($filename, static::$_folders[$type])))
-				{
-					throw new \Fuel_Exception('Could not find asset: '.$filename);
-				}
-
-				$file = static::$_asset_url.$file;
-			}
-			else
-			{
-				$file = $filename;
-			}
-
-			switch($type)
-			{
-				case 'css':
-					if ($raw)
-					{
-						return '<style type="text/css">'.PHP_EOL.file_get_contents($file).PHP_EOL.'</style>';
-					}
-					$attr['rel'] = 'stylesheet';
-					$attr['type'] = 'text/css';
-					$attr['href'] = $file;
-
-					$css .= html_tag('link', $attr).PHP_EOL;
-					break;
-				case 'js':
-					if ($raw)
-					{
-						return html_tag('script', array('type' => 'text/javascript'), PHP_EOL.file_get_contents($file).PHP_EOL).PHP_EOL;
-					}
-					$attr['type'] = 'text/javascript';
-					$attr['src'] = $file;
-
-					$js .= html_tag('script', $attr, '').PHP_EOL;
-					break;
-				case 'img':
-					$attr['src'] = $file;
-					$attr['alt'] = isset($attr['alt']) ? $attr['alt'] : '';
-
-					$img .= html_tag('img', $attr );
-					break;
-			}
-
-		}
-
-		// return them in the correct order
-		return $css.$js.$img;
+		return static::instance()->render($group, $raw);
 	}
 
 	// --------------------------------------------------------------------
@@ -213,23 +177,7 @@ class Asset {
 	 */
 	public static function css($stylesheets = array(), $attr = array(), $group = NULL, $raw = false)
 	{
-		static $temp_group = 1000000;
-
-		$render = false;
-		if ($group === NULL)
-		{
-			$group = (string) (++$temp_group);
-			$render = true;
-		}
-
-		static::_parse_assets('css', $stylesheets, $attr, $group);
-
-		if ($render)
-		{
-			return static::render($group, $raw);
-		}
-
-		return '';
+		return static::instance()->css($stylesheets, $attr, $group, $raw);
 	}
 
 	// --------------------------------------------------------------------
@@ -247,23 +195,7 @@ class Asset {
 	 */
 	public static function js($scripts = array(), $attr = array(), $group = NULL, $raw = false)
 	{
-		static $temp_group = 2000000;
-
-		$render = false;
-		if ( ! isset($group))
-		{
-			$group = (string) $temp_group++;
-			$render = true;
-		}
-
-		static::_parse_assets('js', $scripts, $attr, $group);
-
-		if ($render)
-		{
-			return static::render($group, $raw);
-		}
-
-		return '';
+		return static::instance()->js($scripts, $attr, $group, $raw);
 	}
 
 	// --------------------------------------------------------------------
@@ -281,54 +213,24 @@ class Asset {
 	 */
 	public static function img($images = array(), $attr = array(), $group = NULL)
 	{
-		static $temp_group = 3000000;
-
-		$render = false;
-		if ( ! isset($group))
-		{
-			$group = (string) $temp_group++;
-			$render = true;
-		}
-
-		static::_parse_assets('img', $images, $attr, $group);
-
-		if ($render)
-		{
-			return static::render($group);
-		}
-
-		return '';
+		return static::instance()->img($images, $attr, $group);
 	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Parse Assets
+	 * Get File
 	 *
-	 * Pareses the assets and adds them to the group
+	 * Locates a file in all the asset paths, and return it relative to the docroot
 	 *
-	 * @access	private
-	 * @param	string	The asset type
-	 * @param	mixed	The file name, or an array files.
-	 * @param	array	An array of extra attributes
-	 * @param	string	The asset group name
-	 * @return	string
+	 * @access	public
+	 * @param	string	The filename to locate
+	 * @param	string	The sub-folder to look in (optional)
+	 * @return	mixed	Either the path to the file or false if not found
 	 */
-	protected static function _parse_assets($type, $assets, $attr, $group)
+	public static function get_file($file, $type, $folder = '')
 	{
-		if ( ! is_array($assets))
-		{
-			$assets = array($assets);
-		}
-
-		foreach ($assets as $key => $asset)
-		{
-			static::$_groups[$group][] = array(
-				'type'	=>	$type,
-				'file'	=>	$asset,
-				'attr'	=>	(array) $attr
-			);
-		}
+		return static::instance()->get_file($file, $type, $folder);
 	}
 
 	// --------------------------------------------------------------------
@@ -340,21 +242,11 @@ class Asset {
 	 *
 	 * @access	public
 	 * @param	string	The filename to locate
-	 * @param	string	The sub-folder to look in
+	 * @param	string	The sub-folder to look in (optional)
 	 * @return	mixed	Either the path to the file or false if not found
 	 */
-	public static function find_file($file, $folder)
+	public static function find_file($file, $type, $folder = '')
 	{
-		foreach (static::$_asset_paths as $path)
-		{
-			if (is_file($path.$folder.$file))
-			{
-				return $path.$folder.$file;
-			}
-		}
-
-		return false;
+		return static::instance()->find_file($file, $type, $folder);
 	}
 }
-
-/* End of file asset.php */

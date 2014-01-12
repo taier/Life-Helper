@@ -8,7 +8,7 @@
  *     // SELECT CONCAT(first_name, last_name) AS full_name
  *     $query = DB::select(array(DB::expr('CONCAT(first_name, last_name)'), 'full_name')));
  *
- * @package    Kohana/Database
+ * @package    Fuel/Database
  * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
@@ -19,7 +19,8 @@ namespace Fuel\Core;
 
 
 
-class Database_Expression {
+class Database_Expression
+{
 
 	// Raw expression string
 	protected $_value;
@@ -29,7 +30,7 @@ class Database_Expression {
 	 *
 	 *     $expression = new Database_Expression('COUNT(users.id)');
 	 *
-	 * @return  void
+	 * @param string $value  expression string
 	 */
 	public function __construct($value)
 	{
@@ -62,4 +63,4 @@ class Database_Expression {
 		return $this->value();
 	}
 
-} // End Database_Expression
+}
