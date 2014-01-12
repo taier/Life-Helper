@@ -17,4 +17,16 @@
 		<h1>FREE TEMPLATE</h1>
 		<li><?php echo Html::anchor('templates/index', 'Back'); ?></li>
 		</div>
+
+
+	</br><label> Photo URL </label> </br>
+		<?php
+		 echo Form::open();
+	     echo Form::textarea('text', 
+			Input::post('text', 
+			    isset($text) ? $datas->text : '')); ?>
+		<?php echo Form::submit('submit', 'Save', array('class' => 'btn btn-default')); ?>
+
+			    <?php echo Form::close() ?>
+
 </div>
