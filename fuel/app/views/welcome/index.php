@@ -22,9 +22,8 @@
 		<div class="jumbotron">
 			<h1>Life Helper!</h1>
 		</div>
-
-		<?php echo Html::anchor("account/create", "Register"); ?>
-		<?php echo Html::anchor("account/simpleauth", "Login"); ?>
+		<h3> <?php echo Html::anchor("account/create", "Register"); ?> </h3>
+		<h3><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
 	</div>
 </body>
 </html>

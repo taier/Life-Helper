@@ -10,3 +10,4 @@ ERROR - 2014-01-12 20:19:58 --> Error - Package 'social' could not be found at '
 ERROR - 2014-01-12 20:20:17 --> Fatal Error - Class 'Controller_Public' not found in /Applications/MAMP/htdocs/Life Helper/fuel/app/classes/controller/account.php on line 8
 ERROR - 2014-01-12 20:20:53 --> Error - The requested view could not be found: template in /Applications/MAMP/htdocs/Life Helper/fuel/core/classes/view.php on line 388
 ERROR - 2014-01-12 20:36:42 --> Parsing Error - syntax error, unexpected 'funcion' (T_STRING), expecting variable (T_VARIABLE) in /Applications/MAMP/htdocs/Life Helper/fuel/app/classes/controller/templates.php on line 7
+ERROR - 2014-01-12 20:47:42 --> Fatal Error - Class 'Controller_Template_Review' not found in /Applications/MAMP/htdocs/Life Helper/fuel/app/classes/controller/review.php on line 5

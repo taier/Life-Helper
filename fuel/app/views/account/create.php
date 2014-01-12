@@ -2,7 +2,6 @@
 echo Form::open();
 echo Form::fieldset_open(null, "Enter your data");
 ?>
-
 <label for="usermail">E-mail (works as username)</label> 
 <input type="text" name="usermail" id="usermail" />
 </br>

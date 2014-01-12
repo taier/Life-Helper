@@ -13,18 +13,22 @@
   div {margin-left: 150px;}
  </style>
 </head>
-
 <div id="wrapper">
 		<h1>FREE TEMPLATE</h1>
 		<li><?php echo Html::anchor('templates/index', 'Back'); ?></li>
 		</div>
 
 		<div class="form">
-	</br><label> Enter Cool Text Here! </label> </br>
 		<?php
 		 echo Form::open();
 		 ?>
-	   
+
+		</br><label> Enter Cool Title Here! </label> </br>
+ 		<?php echo Form::input('title', 
+			Input::post('title', 
+			    isset($title) ? $datas->title : '')); ?>
+
+	   </br><label> Enter Cool Text Here! </label> </br>
 	    <?php echo Form::textarea('text', 
 			Input::post('text', 
 			    isset($text) ? $datas->text : '')); ?>

@@ -29,11 +29,13 @@ class Controller_templates extends Controller{
           $date = new DateTime();
           $date->setTimezone(new DateTimeZone('Europe/Riga'));
           $realDate = $date->format('Y-m-d H:i:sP');
+          list(,$user_id) = Auth::get_user_id();
+          $user = Model_Orm_User::find($user_id);
           $val = Model_Orm_Datas::validate('create');
           $datas = Model_Orm_Datas::forge(
              array(
-              'email' => "helloworld@ololo.com",
-              'title' => "My first ololo",
+              'email' => $user->username,
+              'title' => Input::post("title"),
               'text' => Input::post("text"),
               'template' => "1",
               'date' => $realDate,

@@ -10,22 +10,12 @@
 		#footer p { font-size: 14px; text-align: right; }
 		a { color: #000; }
 	</style>
-        <title><?php
-if (isset($page_title)) {
-    echo $page_title;
-}
-if (isset($title)) {
-    echo $title;
-}
-?></title>
 	<?php
 	if (isset($libs_js)) {
 	    //some views may want to add extra scripts
 	    echo Asset::js($libs_js);
 	}
 	?>
-
-	<?php echo Asset::css('bootstrap.css'); ?>
 	<?php
 	if (isset($libs_css)) {
 	    //some views may want to add extra stylesheets
@@ -52,7 +42,7 @@ if (isset($title)) {
     		</div> <p>
 		    <?php
 		else :
-		   		  echo Html::anchor("account/simpleauth", "Log In");
+		   		  echo Html::anchor("welcome/index", "Back");
 		endif;
 		?>
 		</p>
