@@ -19,21 +19,23 @@
 		<div id="content">
 
 			<li><?php echo Html::anchor('users/login', 'Log Out'); ?></li>
+			<li><?php echo Html::anchor('selectionscreen/index', 'Back'); ?></li>
 
-			<p>You have successfully came to this page</p>
-	
-			<p>Controller of this page located at</p>
+			<?php foreach ($data as $userData) { 
+				if($userData->template == "Free") { ?>
+				<h2 style="color:red"> FREE TEMPLATE </h2>
+				<h2 style="color:green"> Title -> <?php echo $userData->title; ?> </h2>
+				<h4> Text -> <?php echo $userData->question1 ?> </h4>
+				<?php }
 
-			<pre><code>APPPATH/classes/controller/review.php</code></pre>
-
-			<p>Setting variables and other stuff for this page happend in </p>
-
-			<pre><code>action_index()</code></pre>
-
-			<p>View of this page located at </p>
-			
-			<pre><code>APPPATH/views/review/index.php</code></pre>
-		
+				if($userData->template == "Productivity") { ?>
+				<h2 style="color:red"> PRODUCTIVITY TEMPLATE </h2>
+				<h2 style="color:green"> Title -> <?php echo $userData->title; ?> </h2>
+				<h4> Answer 1 <?php echo $userData->question1 ?> </h4>
+				<h4> Answer 2 <?php echo $userData->question2 ?> </h4>
+				<h4> Answer 3 <?php echo $userData->question3 ?> </h4>
+				<?php }
+			} ?>
 			<p></p>
 		</div>
 </div>

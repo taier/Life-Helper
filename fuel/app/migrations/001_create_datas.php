@@ -10,8 +10,10 @@ class Create_Datas {
 			'id' => array('constraint' => 11, 'type' => 'int', 'auto_increment' => true),
 			'email' => array('constraint' => 50, 'type' => 'varchar'),
 			'title' => array('type' => 'text'),
-			'text' => array('type' => 'text'),
-			'template' => array('constraint' => 20, 'type' => 'int'),
+			'template' => array('constraint' => 20, 'type' => 'varchar'),
+			'question1' => array('constraint' => 255, 'type' => 'varchar'),
+			'question2' => array('constraint' => 255, 'type' => 'varchar'),
+			'question3' => array('constraint' => 255, 'type' => 'varchar'),
 			'date' => array('type' => 'datetime'),
 			'public' => array('constraint' => 20, 'type' => 'int')
 		), array('id'));
@@ -29,6 +31,45 @@ class Create_Datas {
 			'created_at' => array('constraint' => 11, 'type' => 'int')
 		), array('id'));
 
+		\DBUtil::create_table('templates', array(
+			'id' => array('constraint' => 11, 'type' => 'int', 'auto_increment' => true),
+			'template_name' => array('constraint' => 50, 'type' => 'varchar'),
+			'question' => array('constraint' => 255, 'type' => 'varchar')
+		), array('id'));
+
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Question 1"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Question 2"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Question 3"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Question 4"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Question 5"
+				));
+		$datas->save();
+
+
+
 	\Auth::instance()->create_user(
 			"admin@lifehelper.com", //username = email
 			"lifehelper_admin",
@@ -43,8 +84,10 @@ class Create_Datas {
 				array(
 				'email' => "helloworld@ololo.com",
 				'title' => "My first ololo",
-				'text' => "Soul, Money",
-				'template' => "1",
+				'template' => "Fre",
+				'question1' => "Some Text 1",
+				'question2' => "Some Text 2",
+				'question3' => "Some Text 3",
 				'date' => "2012-07-08 11:14:15.638276",
 				'public' =>'1'
 				));

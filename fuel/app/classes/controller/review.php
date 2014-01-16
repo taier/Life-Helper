@@ -2,29 +2,26 @@
 /**
  * An example Controller.  This shows the most basic usage of a Controller.
  */
-class Controller_Review extends Controller_Template_Review {
+class Controller_Review extends Controller {
 
 	public function action_index()
     {
-    	$data = Model_Data::find($this->user_id);
-		$users = Model_Users::find($this->user_id);
+    	$allData = Model_Orm_Datas::find('all');
+    	list(,$user_id) = Auth::get_user_id();
+    	$user = Model_Orm_User::find($user_id);
 
-    	$this->template->name = $users->username;
-    	$this->template->email = $users->email;
-    	$this->template->title = $data->title;
-    	$this->template->text = $data->text;
-		
-		if($data->template == 1) {
-			$this->template->template = "Productivity";
-		}
 
-		$this->template->date = $data->date;
 
-		if($data->template == 1) {
-			$this->template->public = "Maybe";
-		}
 
-       $this->template->content = View::factory('review/index');
-    }
+    	$data['data'] = array();
+    	foreach ($allData as $userData ) {
+    		if($userData->email == $user->username) {
+    			array_push($data['data'], $userData);
+    		}
+    	}
+
+
+        return View::forge('review/index',$data);
+     }
 
 }

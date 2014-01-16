@@ -1,20 +1,14 @@
 <?php
 
-class Model_Orm_Datas extends Orm\Model {
+class Model_Orm_Templates extends Orm\Model {
 
- 	protected static $_table_name = 'datas';
+ 	protected static $_table_name = 'templates';
     protected static $_primary_key = array('id');
     protected static $_properties = array(
 	'id',
-	'email',
-	'title',
-	'template',
-	'question1',
-	'question2',
-	'question3',
-	'date',
-	'public'
-    );
+	'template_name',
+	'question'
+	);
 
     public static function validate($factory) {
 	$val = Validation::forge($factory);
