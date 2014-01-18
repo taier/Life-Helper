@@ -16,5 +16,26 @@
 <div id="wrapper">
 		<h1>INSPIRATION TEMPLATE</h1>
 		<li><?php echo Html::anchor('templates/index', 'Back'); ?></li>
+		<?php
+		 echo Form::open();
+		 $i = 1;
+		 ?>
+
+		 </br><label> Enter Cool Title Here! </label> </br>
+ 		<?php echo Form::input('title', 
+			Input::post('title', 
+			    isset($title) ? $datas->title : '')); ?>
+
+		 <?php foreach ($randomQuestions as $question) { ?>
+			<h4>  <?php echo $question->question ?> </h4>
+
+			<?php echo Form::input('question' . $i, 
+			Input::post('question' . $i
+			    )); ?>
+
+		 <?php $i++; }  ?>
+	</br>
+		 <?php echo Form::submit('submit', 'Save', array('class' => 'btn btn-default')); ?>
+		<?php echo Form::close() ?>
 		</div>
 </div>
