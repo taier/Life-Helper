@@ -5,7 +5,11 @@
 	<meta charset="utf-8">
 	<title>The Fuel PHP Framework</title>
 	<style type="text/css">
+<<<<<<< HEAD
+		body { background-image: url("http://www.lewallpaper.com/imagebank/grey-apple-minimal.jpg");  background-color: #F2F2F2; margin: 45px 0 0 0; font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif; font-size: 18px }
+=======
 		body { background-image: url(http://wallpaper.pickywallpapers.com/1680x1050/highlighted-grey-background.jpg); margin: 45px 0 0 0; font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif; font-size: 18px }
+>>>>>>> 15b92ed48ba840876ea5b1b45db93e2ea80eae6f
 		#wrapper { width: 740px; margin: 0 auto; }
 		h1 { color: #333333; font: normal normal normal 62px/1em Impact, Charcoal, sans-serif; margin: 0 0 15px 0; }
 		pre { padding: 15px; background-color: #FFF; border: 1px solid #CCC; font-size: 16px;}
@@ -13,7 +17,7 @@
 		a { color: #000; }
 	</style>
 </head>
-
+<body>
 <div id="wrapper">
 		<h1>REVIEW SECTION</h1>
 		<div id="content">
@@ -46,3 +50,4 @@
 			<p></p>
 		</div>
 </div>
+</body>
