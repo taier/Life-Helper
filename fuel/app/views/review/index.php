@@ -13,7 +13,7 @@
 		<div id="content">
 
 			<?php echo Html::anchor('selectionscreen/index', 'Back'); ?>
-			<?php echo Html::anchor('users/login', 'Log Out'); ?>
+			 <?php echo Html::anchor('account/logout', 'Log Out'); ?>
 			
 			</br>	</br>
 			<?php foreach ($data as $userData) { 
