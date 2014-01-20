@@ -10,7 +10,7 @@
   echo Form::open();
   echo Form::fieldset_open(null, "");
   ?>
-  <h1 style="margin-bottom:50px">Login</h1>
+  <h1 style="margin-bottom:50px">LOGIN</h1>
   <div class="main">
   <div class="field">
   <label for="username">Username</label> <br>

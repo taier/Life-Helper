@@ -17,12 +17,12 @@
 		 echo Form::open();
 		 ?>
 
-		</br><label> Enter Cool Title Here! </label> </br>
+		</br><h2> Enter Cool Title Here! </h2> </br>
  		<?php echo Form::input('title', 
 			Input::post('title', 
 			    isset($title) ? $datas->title : '')); ?>
 
-	</br>   </br><label> Enter Cool Text Here! </label> </br>
+	</br>   </br><h2> Enter Cool Text Here! </h2> </br>
 	    <?php echo Form::textarea('text', 
 			Input::post('text', 
 			    isset($text) ? $datas->text : '')); ?>
