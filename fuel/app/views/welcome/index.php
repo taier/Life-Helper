@@ -4,26 +4,70 @@
 	<meta charset="utf-8">
 	<title>FuelPHP Framework</title>
 	<style type="text/css">
-		body { background-image: url(http://wallpaper.pickywallpapers.com/1680x1050/highlighted-grey-background.jpg); margin: 45px 0 0 0; font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif; font-size: 18px }
-		#wrapper { width: 740px; margin: 0 auto; }
-		h1 { color: #333333; font: normal normal normal 62px/1em Impact, Charcoal, sans-serif; margin: 0 0 15px 0; }
-		pre { padding: 15px; background-color: #FFF; border: 1px solid #CCC; font-size: 16px;}
-		#footer p { font-size: 14px; text-align: right; }
-		a { color: #000; }
+	 h1 {
+	 	color: rgba(255,106,61,.8);
+	 	font: normal normal normal 62px/1em Impact, sans-serif;
+	 	/*text-shadow:0 1px #eee, 3px 3px #000;*/
+	 	font-size: 32pt;
+	 	text-align:center;
+}
+ a:hover {
+    background: #786b59; /* Цвет фона под ссылкой */ 
+    color: red; /* Цвет ссылки */ 
+   } 
+html {
+		height: 100%;
+        background: url(http://www.widewallpapers.us/file/318/2560x1440/crop/ideal-workplace.jpg) no-repeat center center;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
+        background-attachment: fixed;
+}
+#container{
+	width: 800px;
+	min-width: 600px;
+	height: 250px;
+	min-height: 250px;
+	margin: 6em auto;
+	background-color:  rgba(255,255,255,.5);
+	border-radius: 20px;
+	border: 3px solid rgba(103, 103, 254,.5);
+
+}
+h3{
+	display: inline;
+	color: #FF6A3D;
+}
+    :link{
+        	color: #ffffff;
+        	text-decoration:none;
+    }
+    :visited{color:#ffffff;}
+}
+	h3 {
+		background-color: #eee;
+	}
 	</style>
+
+	<div id="header">
+
+	<button type="button" class="btn btn-default btn-lg">
+  <span class="glyphicon glyphicon-star"></span> Star
+</button>
+		   <h3 class="1" style="margin-left:300px;"><?php echo Html::anchor("account/create", "Register"); ?> </h3>
+		   <h3 class="2"style="margin-left:300px;"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
+	</div>
 </head>
 <body>
-	<header>
-		<div class="container">
-			<div id="logo"></div>
+	<div id="container">
+		<div class="head">
+			<h1>Everyone needs an advice.<br> 
+				Do you want to save your time?<br> 
+				Is it real to do things easy and qualitatively?<br> 
+				With Life-Helper.com it's possible!<br>
+			    Join us now!</h1>
 		</div>
-	</header>
-	<div class="container">
-		<div class="jumbotron">
-			<h1>Life Helper!</h1>
-		</div>
-		<h3> <?php echo Html::anchor("account/create", "Register"); ?> </h3>
-		<h3><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
 	</div>
 </body>
 </html>
