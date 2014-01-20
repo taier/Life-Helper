@@ -5,10 +5,16 @@
        <style type="text/css">
 		body { background-color: #F2F2F2; margin: 45px 0 0 0; font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif; font-size: 18px }
 		#wrapper { width: 740px; margin: 0 auto; }
+<<<<<<< HEAD
 		h1 { color: #333333; font: normal normal normal 62px/1em Impact, Charcoal, sans-serif; margin: 0 0 15px 0; }
 		pre { padding: 15px; background-color: #FFF; border: 100px solid #CCC; font-size: 16px;}
+=======
+		h1 { color: #ffffff; font: normal normal normal 62px/1em Impact, Charcoal, sans-serif; margin: 0 0 15px 0; }
+		pre { padding: 15px; background-color: #FFF; border: 1px solid #CCC; font-size: 16px;}
+>>>>>>> Login + Registration
 		#footer p { font-size: 14px; text-align: right; }
-		a { color: #000; }
+		a { color: #ffffff;}
+		#logged-in {color:#ffffff; padding: 15px;}
 	</style>
 	<?php
 	if (isset($libs_js)) {
