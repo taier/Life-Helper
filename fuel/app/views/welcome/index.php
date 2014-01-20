@@ -10,11 +10,7 @@
 	 	/*text-shadow:0 1px #eee, 3px 3px #000;*/
 	 	font-size: 32pt;
 	 	text-align:center;
-}
- a:hover {
-    background: #786b59; /* Цвет фона под ссылкой */ 
-    color: red; /* Цвет ссылки */ 
-   } 
+} 
 html {
 		height: 100%;
         background: url(http://www.widewallpapers.us/file/318/2560x1440/crop/ideal-workplace.jpg) no-repeat center center;
@@ -35,25 +31,48 @@ html {
 	border: 3px solid rgba(103, 103, 254,.5);
 
 }
-h3{
-	display: inline;
+h3.one{
+	padding-top: 8px;
+	border:1px rgba(0, 153, 204,.1);
+	border-radius: 30px;
+	text-align: center;
+	width:100px;
+	height:40px;
+	font-size: 20pt;
+	background-color: rgba(0, 153, 204,.7);
+	color: #FF6A3D;
+	margin-left:400px;
+}
+h3.two{
+	padding-top: 8px;
+	font-size: 20pt;
+	margin-top: -74px;
+	margin-left:840px;
+	border:1px rgba(0, 153, 204,.1);
+	border-radius: 30px;
+	text-align: center;
+	width:100px;
+	height:40px;
+	background-color: rgba(0, 153, 204,.7);
 	color: #FF6A3D;
 	margin-left:500px;
 }
     :link{
-        	color: #ffffff;
+        	color: rgba(255,106,61,.8);
         	text-decoration:none;
     }
-    :visited{color:#ffffff;}
+    :visited{color:rgba(255,106,61,.8);}
 }
-	h3 {
-		background-color: #eee;
-	}
 	</style>
 
 	<div id="header">
+<<<<<<< HEAD
 		   <h3 class="1" ><?php echo Html::anchor("account/create", "Register"); ?> </h3>
 		   <h3 class="2"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
+=======
+		   <h3 class="one"><?php echo Html::anchor("account/create", "Register"); ?> </h3>
+		   <h3 class="two"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
+>>>>>>> asdfsaf
 	</div>
 </head>
 <body>
