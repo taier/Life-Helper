@@ -26,16 +26,16 @@
 				if($userData->template == "Productivity") { ?>
 				<h2 style="color:red"> PRODUCTIVITY TEMPLATE </h2>
 				<h2 style="color:green"> Title -> <?php echo $userData->title; ?> </h2>
-				<h4> Answer 1 <?php echo $userData->question1 ?> </h4>
-				<h4> Answer 2 <?php echo $userData->question2 ?> </h4>
-				<h4> Answer 3 <?php echo $userData->question3 ?> </h4>
+				<h4> <?php echo $userData->answer1 ?> <?php echo $userData->question1 ?> </h4>
+				<h4> <?php echo $userData->answer2 ?> <?php echo $userData->question2 ?> </h4>
+				<h4> <?php echo $userData->answer3 ?> <?php echo $userData->question3 ?> </h4>
 				<?php }
 				if($userData->template == "Inspiration") { ?>
 				<h2 style="color:red"> INSPIRATION TEMPLATE </h2>
 				<h2 style="color:green"> Title -> <?php echo $userData->title; ?> </h2>
-				<h4> Answer 1 <?php echo $userData->question1 ?> </h4>
-				<h4> Answer 2 <?php echo $userData->question2 ?> </h4>
-				<h4> Answer 3 <?php echo $userData->question3 ?> </h4>
+				<h4> <?php echo $userData->answer1 ?> <?php echo $userData->question1 ?> </h4>
+				<h4> <?php echo $userData->answer2 ?> <?php echo $userData->question2 ?> </h4>
+				<h4> <?php echo $userData->answer3 ?> <?php echo $userData->question3 ?> </h4>
 				<?php }
 			} ?>
 			<p></p>

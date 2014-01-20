@@ -22,8 +22,28 @@
 
 
 		 <?php foreach ($randomQuestions as $question) { ?>
+<?php
+			switch ($i) {
+				case 1:
+					?> <input type="hidden" name="answer1" value="<?php echo $question->question;?>" /> <?php
+					break; 
+				case 2:
+					?> <input type="hidden" name="answer2" value="<?php echo $question->question;?>" /> <?php
+					break;
+				case 3:
+					?> <input type="hidden" name="answer3" value="<?php echo $question->question;?>" /> <?php
+				break;
+				default:
+					# code...
+					break;
+			}
+
+			?>
+
+
+		 
 			<h3 style="margin-top:50px">  <?php echo $question->question ?> </h3>
-		
+			<input type="hidden" name=<?php echo $question->question ?> value="English">
 			<?php echo Form::input('question' . $i, 
 			Input::post('question' . $i
 			    )); ?>
