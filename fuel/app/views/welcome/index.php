@@ -38,6 +38,7 @@ html {
 h3{
 	display: inline;
 	color: #FF6A3D;
+	margin-left:500px;
 }
     :link{
         	color: #ffffff;
@@ -51,12 +52,8 @@ h3{
 	</style>
 
 	<div id="header">
-
-	<button type="button" class="btn btn-default btn-lg">
-  <span class="glyphicon glyphicon-star"></span> Star
-</button>
-		   <h3 class="1" style="margin-left:300px;"><?php echo Html::anchor("account/create", "Register"); ?> </h3>
-		   <h3 class="2"style="margin-left:300px;"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
+		   <h3 class="1" ><?php echo Html::anchor("account/create", "Register"); ?> </h3>
+		   <h3 class="2"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
 	</div>
 </head>
 <body>

@@ -40,31 +40,186 @@ class Create_Datas {
 		$datas = \Model_Orm_Templates::forge(
 				array(
 				'template_name' => "Productivity",
-				'question' => "Question 1"
+				'question' => "What do you love doing?"
 				));
 		$datas->save();
 		$datas = \Model_Orm_Templates::forge(
 				array(
 				'template_name' => "Productivity",
-				'question' => "Question 2"
+				'question' => "What is your dream job?"
 				));
 		$datas->save();
 		$datas = \Model_Orm_Templates::forge(
 				array(
 				'template_name' => "Productivity",
-				'question' => "Question 3"
+				'question' => "What did you enjoy as a child?"
 				));
 		$datas->save();
 		$datas = \Model_Orm_Templates::forge(
 				array(
 				'template_name' => "Productivity",
-				'question' => "Question 4"
+				'question' => "Do you currently have the skills required to fulfill your goals?"
 				));
 		$datas->save();
 		$datas = \Model_Orm_Templates::forge(
 				array(
 				'template_name' => "Productivity",
-				'question' => "Question 5"
+				'question' => "If not know, then when?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Do you ask enough questions?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "When the last time you tried something new?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Time or money?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "What do you do to be more productive?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "When you have a lot of work to do, how do you get it all done? "
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Have you ever done a cost-benefit analysis? "
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "How can you make your free-time more efficient?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Are you working too long or too short of a time for certain tasks?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Which of your projects, if completed, would likely have the most impact?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Productivity",
+				'question' => "Do you think about future?"
+				));
+		$datas->save();
+
+
+
+
+
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "When did you know you wanted to have a Life-Helper?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "What books would you recommend for a young adult?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "What do you want your life to look like?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "How do you want to grow spiritually?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "What do you want to improve physically?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "How do you want to increase your creativity?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "How do you want your relationship with your spouse to look?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "Do you think crying is the sign of weakness of strength?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "How would you like to relate to your children?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "What inspires you?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "If you had no limits what would you choose to do?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "When and where do you get most of your inspirations?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "Can you be over inspired?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "Why does the energy flow from unseen, bountiful sources one day, then dry up the next?"
+				));
+		$datas->save();
+		$datas = \Model_Orm_Templates::forge(
+				array(
+				'template_name' => "Inspiration",
+				'question' => "What would you do differently if you knew nobody would judge you?"
 				));
 		$datas->save();
 
