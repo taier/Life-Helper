@@ -19,26 +19,31 @@
 
       if (Input::method() == 'POST') {
                   $date = new DateTime();
-                  $date->setTimezone(new DateTimeZone('Europe/Riga'));
-                  $realDate = $date->format('Y-m-d H:i:sP');
-                  list(,$user_id) = Auth::get_user_id();
-                  $user = Model_Orm_User::find($user_id);
-                  $val = Model_Orm_Datas::validate('create');
-                  $datas = Model_Orm_Datas::forge(
-                     array(
-                      'email' => $user->username,
-                      'title' => Input::post("title"),
-                      'template' => "Productivity",
-                      'question1' => Input::post("question1"),
-                      'question2' => Input::post("question2"),
-                      'question3' => Input::post("question3"),
-                      'date' => $realDate,
-                      'public' =>'1'
-                      ));
+                $ololo =   request::param("randomQuestions");
+                echo $ololo[0];
+            //       $date->setTimezone(new DateTimeZone('Europe/Riga'));
+            //       $realDate = $date->format('Y-m-d H:i:sP');
+            //       list(,$user_id) = Auth::get_user_id();
+            //       $user = Model_Orm_User::find($user_id);
+            //       $val = Model_Orm_Datas::validate('create');
+            //       $datas = Model_Orm_Datas::forge(
+            //          array(
+            //           'email' => $user->username,
+            //           'title' => Input::post("title"),
+            //           'template' => "Productivity",
+            //           'question1' => Input::post("question1"),
+            //           'question2' => Input::post("question2"),
+            //           'question3' => Input::post("question3"),
+            //           'answer1' => request::param("randomQuestions"),
+            //           'answer2' => request::param("question2"),
+            //           'answer3' => request::param("question3"),
+            //           'date' => $realDate,
+            //           'public' =>'1'
+            //           ));
 
-            if($datas->save()) {
-              Response::redirect('templates/index');
-            }
+            // if($datas->save()) {
+            //   Response::redirect('templates/index');
+            // }
           }
 
 
@@ -86,13 +91,16 @@
                   $user = Model_Orm_User::find($user_id);
                   $val = Model_Orm_Datas::validate('create');
                   $datas = Model_Orm_Datas::forge(
-                     array(
+                    array(
                       'email' => $user->username,
                       'title' => Input::post("title"),
-                      'template' => "Inspiration",
+                      'template' => "Productivity",
                       'question1' => Input::post("question1"),
                       'question2' => Input::post("question2"),
                       'question3' => Input::post("question3"),
+                      'answer1' => Input::post("answer1"),
+                      'answer2' => Input::post("answer2"),
+                      'answer3' => Input::post("answer3"),
                       'date' => $realDate,
                       'public' =>'1'
                       ));
@@ -153,6 +161,9 @@
                 'question1' => Input::post("text"),
                 'question2' => "nothing",
                 'question3' => "nothing",
+                'answer1' => "nothing",
+                'answer2' => "nothing",
+                'answer3' => "nothing",
                 'date' => $realDate,
                 'public' =>'1'
                 ));

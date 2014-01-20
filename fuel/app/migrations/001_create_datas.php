@@ -14,6 +14,9 @@ class Create_Datas {
 			'question1' => array('constraint' => 255, 'type' => 'varchar'),
 			'question2' => array('constraint' => 255, 'type' => 'varchar'),
 			'question3' => array('constraint' => 255, 'type' => 'varchar'),
+			'answer1' => array('constraint' => 255, 'type' => 'varchar'),
+			'answer2' => array('constraint' => 255, 'type' => 'varchar'),
+			'answer3' => array('constraint' => 255, 'type' => 'varchar'),
 			'date' => array('type' => 'datetime'),
 			'public' => array('constraint' => 20, 'type' => 'int')
 		), array('id'));
@@ -234,19 +237,6 @@ class Create_Datas {
 			      "verification_key" => md5(mt_rand(0, mt_getrandmax())))
 			);
 
-
-		$datas = \Model_Orm_Datas::forge(
-				array(
-				'email' => "helloworld@ololo.com",
-				'title' => "My first ololo",
-				'template' => "Fre",
-				'question1' => "Some Text 1",
-				'question2' => "Some Text 2",
-				'question3' => "Some Text 3",
-				'date' => "2012-07-08 11:14:15.638276",
-				'public' =>'1'
-				));
-		$datas->save();
 	}
 
 	function down()

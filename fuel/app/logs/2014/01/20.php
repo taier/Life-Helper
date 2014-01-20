@@ -369,3 +369,4 @@ WARNING - 2014-01-20 18:55:10 --> Fuel\Core\Fuel::init - The configured locale e
 WARNING - 2014-01-20 18:55:35 --> Fuel\Core\Fuel::init - The configured locale en_US is not installed on your system.
 WARNING - 2014-01-20 18:55:45 --> Fuel\Core\Fuel::init - The configured locale en_US is not installed on your system.
 WARNING - 2014-01-20 18:57:05 --> Fuel\Core\Fuel::init - The configured locale en_US is not installed on your system.
+ERROR - 2014-01-20 21:13:06 --> Parsing Error - syntax error, unexpected end of file, expecting function (T_FUNCTION) in /Applications/MAMP/htdocs/Life Helper/fuel/app/migrations/001_create_datas.php on line 244

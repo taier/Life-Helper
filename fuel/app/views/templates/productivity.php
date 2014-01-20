@@ -27,9 +27,10 @@
 			Input::post('title', 
 			    isset($title) ? $datas->title : '')); ?>
 
+
 		 <?php foreach ($randomQuestions as $question) { ?>
 			<h4>  <?php echo $question->question ?> </h4>
-
+		
 			<?php echo Form::input('question' . $i, 
 			Input::post('question' . $i
 			    )); ?>

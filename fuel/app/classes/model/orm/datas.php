@@ -12,6 +12,9 @@ class Model_Orm_Datas extends Orm\Model {
 	'question1',
 	'question2',
 	'question3',
+	'answer1',
+	'answer2',
+	'answer3',
 	'date',
 	'public'
     );
