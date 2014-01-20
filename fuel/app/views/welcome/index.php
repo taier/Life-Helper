@@ -11,6 +11,10 @@
 	 	font-size: 32pt;
 	 	text-align:center;
 }
+ a:hover {
+    background: #786b59; /* Цвет фона под ссылкой */ 
+    color: red; /* Цвет ссылки */ 
+   } 
 html {
 		height: 100%;
         background: url(http://www.widewallpapers.us/file/318/2560x1440/crop/ideal-workplace.jpg) no-repeat center center;
@@ -47,8 +51,12 @@ h3{
 	</style>
 
 	<div id="header">
-		   <h3 class="1"><?php echo Html::anchor("account/create", "Register"); ?> </h3>
-		   <h3 class="2"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
+
+	<button type="button" class="btn btn-default btn-lg">
+  <span class="glyphicon glyphicon-star"></span> Star
+</button>
+		   <h3 class="1" style="margin-left:300px;"><?php echo Html::anchor("account/create", "Register"); ?> </h3>
+		   <h3 class="2"style="margin-left:300px;"><?php echo Html::anchor("account/simpleauth", "Login"); ?></h3>
 	</div>
 </head>
 <body>
