@@ -10,8 +10,10 @@
 <div id="wrapper">
   <h1>TEMPLATE SELECTION</h1>
   <div id="content">
+  	<center>
     <?php echo Html::anchor('selectionscreen/index', 'Back'); ?>
     <?php echo Html::anchor('account/logout', 'Log Out'); ?>
+</center>
  <div style="margin-top:80px;margin-bottom:800px">
    <h2 style="display:inline; "> <?php echo Html::anchor('templates/productivity', 'Productivity'); ?>  </h2>
    <h2 style="display:inline;margin-left:50px;"> <?php echo Html::anchor('templates/inspiration', 'Inspiration'); ?> </h2>
