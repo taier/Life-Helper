@@ -114,7 +114,7 @@
         $data['randomQuestions'] = array();
         $data['InspirationQuestions'] = array();
         foreach ($allQuestions as $question) {
-          if($question->template_name == "inspiration") {
+          if($question->template_name == "Inspiration") {
             array_push($data['InspirationQuestions'], $question);
           }
         }
